@@ -1,23 +1,40 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { HashRouter, Routes, Route, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
-// User
-import Tracking from './components/User/Tracking.jsx';
+import "./App.css";
+
+// Admin pages
+import AdminLayout from "./components/Admin/AdminLayout.jsx";
+import Dashboard from "./components/Admin/pages/Dashboard.jsx";
+import ParcelManagement from "./components/Admin/pages/ParcelManagement.jsx";
+import Receipt from "./components/Admin/pages/Receipt.jsx";
+import ScanParcel from "./components/Admin/pages/ScanParcel.jsx";
+
+// User pages
+import Tracking from "./components/User/Tracking.jsx";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <HashRouter>
       <Routes>
-        {/* User */}
-        <Route path="/" element={<Tracking />} />
+        {/* Root redirect ไป admin dashboard */}
+        <Route path="/" element={<Navigate to="/admin" />} />
+
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="ParcelManagement" element={<ParcelManagement />} />
+          <Route path="Receipt" element={<Receipt />} />
+          <Route path="ScanParcel" element={<ScanParcel />} />
+        </Route>
+
+        {/* User routes */}
+        <Route>
+          <Route path="/" element={<Tracking />} />
+        </Route>
       </Routes>
     </HashRouter>
-  )
+  );
 }
 
-export default App
+export default App;

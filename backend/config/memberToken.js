@@ -1,11 +1,10 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const fetch = require("node-fetch");
-
 //ขอ token จากไปรษณีย์ไทย
+require('dotenv').config();
+
 async function getThaiPostToken() {
-  const memberToken =
-    "B1W6K;KzB%KJNjMmJ:LTNcQzJcUlQiHQV.YqLFYpJ4K?GhV=PSWRZ~HLK_TCWnK?K=A6GfI1SWGRZVNbEGIQE^B1DgW^Z1URTcJG";
+  const memberToken = process.env.THAIPOST_MEMBER_TOKEN;
+  if (!memberToken) throw new Error("กรุณาตั้งค่า THAIPOST_MEMBER_TOKEN ใน .env");
+
   const response = await fetch(
     "https://trackapi.thailandpost.co.th/post/api/v1/authenticate/token",
     {
@@ -16,10 +15,16 @@ async function getThaiPostToken() {
       },
     }
   );
-  const data = await response.json();
-  return data.token;
+//debug
+  const text = await response.text();
+  console.log("Response from ThaiPost (auth):", text);
+  try {
+    const data = JSON.parse(text);
+    if (!data.token) throw new Error("Token not returned from ThaiPost");
+    return data.token;
+  } catch (err) {
+    throw new Error("ThaiPost API did not return JSON: " + err.message);
+  }
 }
 
-module.exports = {
-  getThaiPostToken,
-};
+module.exports = { getThaiPostToken };
