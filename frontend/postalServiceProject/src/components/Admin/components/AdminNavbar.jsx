@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 const AdminNavbar = () => {
   const navItems = [
     { to: "/admin", label: "หน้าหลัก" },
-    { to: "/admin/ParcelManagement", label: "จัดการพัสดุ" },
+    { to: "/admin/ParcelManagement", label: "แก้ไขข้อมูลพัสดุ" },
     { to: "/admin/Receipt", label: "ใบเสร็จ" },
-    { to: "/admin/ScanParcel", label: "สแกนบาร์ดค้ด" },
+    { to: "/admin/RegisterParcel", label: "ลงทะเบียนพัสดุใหม่" },
   ];
 
   return (

@@ -8,7 +8,7 @@ import AdminLayout from "./components/Admin/AdminLayout.jsx";
 import Dashboard from "./components/Admin/pages/Dashboard.jsx";
 import ParcelManagement from "./components/Admin/pages/ParcelManagement.jsx";
 import Receipt from "./components/Admin/pages/Receipt.jsx";
-import ScanParcel from "./components/Admin/pages/ScanParcel.jsx";
+import RegisterParcel from "./components/Admin/pages/RegisterParcel.jsx";
 
 // User pages
 import Tracking from "./components/User/Tracking.jsx";
@@ -25,7 +25,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="ParcelManagement" element={<ParcelManagement />} />
           <Route path="Receipt" element={<Receipt />} />
-          <Route path="ScanParcel" element={<ScanParcel />} />
+          <Route path="RegisterParcel" element={<RegisterParcel />} />
         </Route>
 
         {/* User routes */}

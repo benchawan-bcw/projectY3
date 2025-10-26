@@ -10,8 +10,8 @@ async function getThaiPostToken() {
     {
       method: "POST",
       headers: {
-        Authorization: `Token ${memberToken}`,
         "Content-Type": "application/json",
+        Authorization: `Token ${memberToken}`,
       },
     }
   );

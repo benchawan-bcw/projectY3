@@ -1,12 +1,13 @@
 // API ของแอดมิน
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose");
 const Parcels = require("../models/parcels");
 const { getThaiPostToken } = require("../config/memberToken");
 
 // โหลดไฟล์ JSON
 const dataPath = path.join(__dirname, "../config/islandsPostCode.json");
-const islandData  = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
+const islandData = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
 const emsRatesPath = path.join(__dirname, "../config/emsCost.json");
 const emsRates = JSON.parse(fs.readFileSync(emsRatesPath, "utf-8"));
 
@@ -47,7 +48,7 @@ exports.registerParcel = async (req, res) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Token ${token}`,
           },
           body: JSON.stringify({ barcode: [tracking_number] }),
         }
@@ -69,6 +70,9 @@ exports.registerParcel = async (req, res) => {
       console.error("Error fetching tracking info:", err);
       trackingInfo = {};
     }
+
+    console.log("Mongo connected:", mongoose.connection.readyState);
+    console.log("req.body:", req.body);
 
     const parcel = await Parcels.create({
       tracking_number,
@@ -106,12 +110,12 @@ function checkIsIsland(postcode) {
 
 // ฟังก์ชันคำนวณค่าส่ง EMS
 function calculateEmsCost(weight, isIsland = false, packagingCost = 0) {
-  const rate = emsRates.find(r => weight <= r.max);
+  const rate = emsRates.find((r) => weight <= r.max);
   if (!rate) throw new Error("ไม่พบอัตราค่าส่งสำหรับน้ำหนักนี้");
 
   let cost = rate.price;
   if (isIsland) cost += 15; // พื้นที่เกาะ
-  cost += packagingCost;    // เพิ่มค่าอุปกรณ์
+  cost += packagingCost; // เพิ่มค่าอุปกรณ์
 
   return cost;
 }
@@ -124,8 +128,38 @@ exports.calculateEms = (req, res) => {
     const isIsland = checkIsIsland(postcode);
     const totalCost = calculateEmsCost(weight, isIsland, packagingCost);
 
-    res.json({ success: true, weight, postcode, isIsland, packagingCost, totalCost });
+    res.json({
+      success: true,
+      weight,
+      postcode,
+      isIsland,
+      packagingCost,
+      totalCost,
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
-}
+};
+
+//ดึงข้อมูลที่อยู่จากรหัสไปรษณีย์
+exports.getAddressByZipcode = async (req, res) => {
+  try {
+    const { zipcode } = req.params;
+    if (!zipcode)
+      return res.status(400).json({ message: "กรุณากรอกรหัสไปรษณีย์" });
+
+    const response = await fetch(
+      `https://thaiaddressapi-thaipost.vercel.app/v1/zipcode/${zipcode}`
+    );
+
+    res.status(200).json({
+      zipcode: response.data.zipcode,
+      district: response.data.district,
+      amphoe: response.data.amphoe,
+      province: response.data.province,
+    });
+  } catch (error) {
+    console.error("Error fetching address:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
+  }
+};
