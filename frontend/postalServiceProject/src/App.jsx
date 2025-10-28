@@ -11,14 +11,15 @@ import Receipt from "./components/Admin/pages/Receipt.jsx";
 import RegisterParcel from "./components/Admin/pages/RegisterParcel.jsx";
 
 // User pages
-import Tracking from "./components/User/Tracking.jsx";
+import UserLayout from "./components/User/UserLayout.jsx";
+import Tracking from "./components/User/pages/Tracking.jsx";
 
 function App() {
   return (
     <HashRouter>
       <Routes>
         {/* Root redirect ไป admin dashboard */}
-        <Route path="/" element={<Navigate to="/admin" />} />
+        <Route path="/" element={<Navigate to="/user" />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -29,8 +30,8 @@ function App() {
         </Route>
 
         {/* User routes */}
-        <Route>
-          <Route path="/" element={<Tracking />} />
+        <Route path="/user" element={<UserLayout />}>
+          <Route path="Tracking" element={<Tracking />} />
         </Route>
       </Routes>
     </HashRouter>

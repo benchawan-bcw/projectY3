@@ -1,4 +1,3 @@
-// สแกนบาร์โค้ดแล้วบันทึกเข้าสู่ระบบ
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 // import { set } from "mongoose";
@@ -70,11 +69,11 @@ const RegisterParcel = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-4 border rounded shadow">
-      <h1 className="text-xl font-bold mb-4">ลงทะเบียนพัสดุใหม่</h1>
+    <div className="w-full max-w-2xl mx-auto p-4 border rounded shadow">
+      <h1 className="text-xl font-bold mb-4 text-cente">ลงทะเบียนพัสดุใหม่</h1>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label>Tracking Number:</label>
+          <label>Tracking Number :</label>
           <input
             type="text"
             value={trackingNumber}
@@ -85,8 +84,11 @@ const RegisterParcel = () => {
             className="w-full border p-2 rounded"
           />
         </div>
+
+        <hr className="my-4 border-t-2 border-gray-300" />
+
         <div>
-          <label>ผู้ส่ง:</label>
+          <label>ชื่อผู้ส่ง :</label>
           <input
             type="text"
             value={sender}
@@ -94,8 +96,22 @@ const RegisterParcel = () => {
             className="w-full border p-2 rounded"
           />
         </div>
+
+        {/* แก้ */}
         <div>
-          <label>ผู้รับ:</label>
+          <label>เบอร์โทรศัพท์ :</label>
+          <input
+            type="text"
+            value={sender}
+            onChange={(e) => setSender(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        <hr className="my-4 border-t-2 border-gray-300" />
+
+        <div>
+          <label>ชื่อผู้รับ :</label>
           <input
             type="text"
             value={receiver}
@@ -104,27 +120,94 @@ const RegisterParcel = () => {
           />
         </div>
         <div>
-          <label>ที่อยู่:</label>
+          <label>บ้านเลขที่ : </label>
           <input
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="บ้านเลขที่, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"
             className="w-full border p-2 rounded"
           />
         </div>
+
+        {/* หมู่ที่, ซอย, ถนน */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label>หมู่ที่ :</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+          <div className="flex-1">
+            <label>ซอย :</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+          <div className="flex-1">
+            <label>ถนน :</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+        </div>
+
         <div>
-          <label>น้ำหนัก(กรัม):</label>
+          <label>แขวง/ตำบล : </label>
           <input
-            type="number"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
             className="w-full border p-2 rounded"
           />
         </div>
         <div>
-          <label>ประเภทบริการ:</label>
-          <label className="w-full border p-2 rounded">EMS</label>
+          <label>เขต/อำเภอ : </label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+        <div>
+          <label>จังหวัด :</label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        {/* แก้ */}
+        <div>
+          <label>รหัสไปรษณีย์ :</label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        {/* แก้ */}
+        <div>
+          <label>เบอร์โทรศัพท์ :</label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
         </div>
 
         <button
