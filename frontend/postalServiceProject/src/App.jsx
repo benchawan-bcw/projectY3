@@ -9,6 +9,7 @@ import Dashboard from "./components/Admin/pages/Dashboard.jsx";
 import ParcelManagement from "./components/Admin/pages/ParcelManagement.jsx";
 import Receipt from "./components/Admin/pages/Receipt.jsx";
 import RegisterParcel from "./components/Admin/pages/RegisterParcel.jsx";
+import ParcelReport from "./components/Admin/pages/ParcelReport.jsx";
 
 // User pages
 import UserLayout from "./components/User/UserLayout.jsx";
@@ -27,6 +28,7 @@ function App() {
           <Route path="ParcelManagement" element={<ParcelManagement />} />
           <Route path="Receipt" element={<Receipt />} />
           <Route path="RegisterParcel" element={<RegisterParcel />} />
+          <Route path="ParcelReport" element={<ParcelReport />} />
         </Route>
 
         {/* User routes */}

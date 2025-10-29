@@ -6,6 +6,7 @@ const AdminNavbar = () => {
     { to: "/admin/ParcelManagement", label: "แก้ไขข้อมูลพัสดุ" },
     { to: "/admin/Receipt", label: "ใบเสร็จ" },
     { to: "/admin/RegisterParcel", label: "ลงทะเบียนพัสดุใหม่" },
+    { to: "/admin/ParcelReport", label: "รายงานสถิติพัสดุ" },
   ];
 
   return (

@@ -5,10 +5,22 @@ import axios from "axios";
 const RegisterParcel = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [sender, setSender] = useState("");
+  const [senderPhone, setSenderPhone] = useState("");
   const [receiver, setReceiver] = useState("");
+  const [receiverPhone, setReceiverPhone] = useState("");
+
   const [address, setAddress] = useState("");
   const [weight, setWeight] = useState(0);
   const [serviceType] = useState("EMS");
+
+  const [houseNumber, setHouseNumber] = useState("");
+  const [village, setVillage] = useState("");
+  const [soi, setSoi] = useState("");
+  const [road, setRoad] = useState("");
+  const [district, setDistrict] = useState("");
+  const [amphoe, setAmphoe] = useState("");
+  const [province, setProvince] = useState("");
+  const [zipcode, setZipcode] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -33,13 +45,14 @@ const RegisterParcel = () => {
     }
 
     try {
+      const fullAddress = `${houseNumber} หมู่ที่${village} ซอย${soi} ถนน${road} ต.${district} อ.${amphoe} จ.${province} ${zipcode}`;
       const res = await axios.post(
         "http://localhost:4000/admin-ban-poolsub/registerParcel",
         {
           tracking_number: trackingNumber,
           sender,
           receiver,
-          address,
+          address: fullAddress,
           weight,
           service_type: serviceType,
         },
@@ -65,6 +78,51 @@ const RegisterParcel = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleZipcodeChange = async (e) => {
+    const value = e.target.value;
+    setZipcode(value);
+
+    if (value.length === 5) {
+      try {
+        const res = await axios.get(
+          `http://localhost:4000/admin-ban-poolsub/getAddressByZipcode/${value}`
+        );
+
+        const data = res.data;
+        setDistrict(data.district);
+        setAmphoe(data.amphoe);
+        setProvince(data.province);
+      } catch (err) {
+        console.error(err);
+        setDistrict("");
+        setAmphoe("");
+        setProvince("");
+      }
+    }
+  };
+
+  const getAddressByZipcode = async (zipcode) => {
+    if (!zipcode || zipcode.length !== 5) return;
+
+    try {
+      const res = await axios.get(
+        `https://thaiaddressapi-thaipost.vercel.app/v1/zipcode/${zipcode}`
+      );
+
+      if (res.data && res.data.data.length > 0) {
+        const info = res.data.data[0];
+        setDistrict(info.district);
+        setAmphoe(info.amphoe);
+        setProvince(info.province);
+      } else {
+        alert("ไม่พบข้อมูลที่อยู่สำหรับรหัสไปรษณีย์นี้");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("เกิดข้อผิดพลาดในการดึงข้อมูลที่อยู่");
     }
   };
 
@@ -102,8 +160,8 @@ const RegisterParcel = () => {
           <label>เบอร์โทรศัพท์ :</label>
           <input
             type="text"
-            value={sender}
-            onChange={(e) => setSender(e.target.value)}
+            value={senderPhone}
+            onChange={(e) => setSenderPhone(e.target.value)}
             className="w-full border p-2 rounded"
           />
         </div>
@@ -123,8 +181,8 @@ const RegisterParcel = () => {
           <label>บ้านเลขที่ : </label>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={houseNumber}
+            onChange={(e) => setHouseNumber(e.target.value)}
             className="w-full border p-2 rounded"
           />
         </div>
@@ -135,8 +193,8 @@ const RegisterParcel = () => {
             <label>หมู่ที่ :</label>
             <input
               type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={village}
+              onChange={(e) => setVillage(e.target.value)}
               className="w-full border p-2 rounded"
             />
           </div>
@@ -144,8 +202,8 @@ const RegisterParcel = () => {
             <label>ซอย :</label>
             <input
               type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={soi}
+              onChange={(e) => setSoi(e.target.value)}
               className="w-full border p-2 rounded"
             />
           </div>
@@ -153,8 +211,8 @@ const RegisterParcel = () => {
             <label>ถนน :</label>
             <input
               type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={road}
+              onChange={(e) => setRoad(e.target.value)}
               className="w-full border p-2 rounded"
             />
           </div>
@@ -164,8 +222,8 @@ const RegisterParcel = () => {
           <label>แขวง/ตำบล : </label>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={district}
+            readOnly
             className="w-full border p-2 rounded"
           />
         </div>
@@ -173,8 +231,8 @@ const RegisterParcel = () => {
           <label>เขต/อำเภอ : </label>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={amphoe}
+            readOnly
             className="w-full border p-2 rounded"
           />
         </div>
@@ -182,8 +240,8 @@ const RegisterParcel = () => {
           <label>จังหวัด :</label>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={province}
+            readOnly
             className="w-full border p-2 rounded"
           />
         </div>
@@ -193,8 +251,33 @@ const RegisterParcel = () => {
           <label>รหัสไปรษณีย์ :</label>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            onChange={async (e) => {
+              const value = e.target.value;
+              setZipcode(value);
+
+              if (value.length === 5) {
+                try {
+                  const res = await axios.get(
+                    `http://localhost:4000/admin-ban-poolsub/getAddressByZipcode?zipcode=${value}`,
+                    {
+                      auth: {
+                        username: "admin",
+                        password: "bands",
+                      },
+                    }
+                  );
+                  const data = res.data;
+                  setDistrict(data.district);
+                  setAmphoe(data.amphoe);
+                  setProvince(data.province);
+                } catch (err) {
+                  console.error(err);
+                  setDistrict("");
+                  setAmphoe("");
+                  setProvince("");
+                }
+              }
+            }}
             className="w-full border p-2 rounded"
           />
         </div>
@@ -204,8 +287,8 @@ const RegisterParcel = () => {
           <label>เบอร์โทรศัพท์ :</label>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={receiverPhone}
+            onChange={(e) => setReceiverPhone(e.target.value)}
             className="w-full border p-2 rounded"
           />
         </div>

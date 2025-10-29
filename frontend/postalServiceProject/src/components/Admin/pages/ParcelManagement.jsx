@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from "react";
 
 const ParcelManagement = () => {
-    return (
+  return (
     <div>
-      <h1>ดูสรุปรายการพัสดุส่งแต่ละเดือน</h1>
+      <h1>แก้ไขข้อมูลพัสดุ</h1>
     </div>
-    );
-}
+  );
+};
 
 export default ParcelManagement;
