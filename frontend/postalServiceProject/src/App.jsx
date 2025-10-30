@@ -6,7 +6,6 @@ import "./App.css";
 // Admin pages
 import AdminLayout from "./components/Admin/AdminLayout.jsx";
 import Dashboard from "./components/Admin/pages/Dashboard.jsx";
-import ParcelManagement from "./components/Admin/pages/ParcelManagement.jsx";
 import Receipt from "./components/Admin/pages/Receipt.jsx";
 import RegisterParcel from "./components/Admin/pages/RegisterParcel.jsx";
 import ParcelReport from "./components/Admin/pages/ParcelReport.jsx";
@@ -25,7 +24,6 @@ function App() {
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
-          <Route path="ParcelManagement" element={<ParcelManagement />} />
           <Route path="Receipt" element={<Receipt />} />
           <Route path="RegisterParcel" element={<RegisterParcel />} />
           <Route path="ParcelReport" element={<ParcelReport />} />

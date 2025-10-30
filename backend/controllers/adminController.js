@@ -14,10 +14,30 @@ const emsRates = JSON.parse(fs.readFileSync(emsRatesPath, "utf-8"));
 // ลงทะเบียนพัสดุใหม่
 exports.registerParcel = async (req, res) => {
   try {
-    const { tracking_number, sender, receiver, address, weight, service_type } =
-      req.body;
+    const {
+      tracking_number,
+      sender,
+      sender_phone,
+      receiver,
+      receiver_phone,
+      address,
+      weight,
+      equipment,
+      service_type,
+      isIsland = false,
+      packagingCost = 0,
+    } = req.body;
 
-    if (!tracking_number || !sender || !receiver || !address || !weight) {
+    if (
+      !tracking_number ||
+      !sender ||
+      !sender_phone ||
+      !receiver ||
+      !receiver_phone ||
+      !address ||
+      !weight ||
+      !equipment
+    ) {
       return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบทุกช่อง" });
     }
 
@@ -45,12 +65,15 @@ exports.registerParcel = async (req, res) => {
       const response = await fetch(
         "https://trackapi.thailandpost.co.th/post/api/v1/track",
         {
-          method: "POST",
+          status: "all",
+          language: "TH",
+          barcode: [tracking_number],
+        },
+        {
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ barcode: [tracking_number] }),
         }
       );
 
@@ -74,14 +97,24 @@ exports.registerParcel = async (req, res) => {
     console.log("Mongo connected:", mongoose.connection.readyState);
     console.log("req.body:", req.body);
 
+    const shippingCost = calculateEmsCost(weight, isIsland, packagingCost);
+    const totoal_equipment = Array.isArray(equipment)
+      ? equipment.reduce((total, item) => total + item.price, 0)
+      : equipment.price;
+
     const parcel = await Parcels.create({
       tracking_number,
       sender,
+      sender_phone,
       receiver,
+      receiver_phone,
       address,
       weight,
+      equipment,
       service_type: service_type || "EMS",
       status: trackingInfo?.status || "รออัปเดต",
+      shipping_cost: shippingCost,
+      total_equipment: totoal_equipment,
       update_at: new Date(),
     });
 
@@ -144,19 +177,36 @@ exports.calculateEms = (req, res) => {
 //ดึงข้อมูลที่อยู่จากรหัสไปรษณีย์
 exports.getAddressByZipcode = async (req, res) => {
   try {
-    const { zipcode } = req.params;
-    if (!zipcode)
-      return res.status(400).json({ message: "กรุณากรอกรหัสไปรษณีย์" });
+    const { zipcode } = req.query;
+    if (!zipcode || !/^\d{5}$/.test(zipcode)) {
+      return res.status(400).json({ message: "กรุณากรอกรหัสไปรษณีย์ 5 หลัก" });
+    }
 
     const response = await fetch(
       `https://thaiaddressapi-thaipost.vercel.app/v1/zipcode/${zipcode}`
     );
 
+    if (!response.ok) {
+      return res
+        .status(response.status)
+        .json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return res.status(404).json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
+    }
+
+    // เลือกตำบลแรก
+    const addr = data[0];
+
     res.status(200).json({
-      zipcode: response.data.zipcode,
-      district: response.data.district,
-      amphoe: response.data.amphoe,
-      province: response.data.province,
+      zipcode: addr.zipcode,
+      district: addr.district || "",
+      amphoe: addr.amphoe || "",
+      province: addr.province || "",
+      subdistrict: addr.subdistrict || "",
     });
   } catch (error) {
     console.error("Error fetching address:", error);

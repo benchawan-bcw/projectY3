@@ -15,6 +15,6 @@ router.use(adminAuth);
 router.post("/registerParcel", registerParcel);
 router.get("/getParcels", getParcels);
 router.post("/calculateEms", calculateEms);
-router.post("/getAddressByZipcode", getAddressByZipcode);
+router.get("/getAddressByZipcode", getAddressByZipcode);
 
 module.exports = router;

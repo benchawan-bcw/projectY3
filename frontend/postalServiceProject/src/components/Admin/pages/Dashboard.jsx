@@ -1,22 +1,22 @@
-// สรุปพัสดุส่งล่าสุด, สถิติพัสดุต่อวัน/เดือน
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 import ParcelTable from "../components/ParcelTable.jsx";
 import axios from "axios";
-// import { set } from "mongoose";
+import dayjs from "dayjs";
+import weekOfYear from "dayjs/plugin/weekOfYear";
+dayjs.extend(weekOfYear);
 
 const Dashboard = () => {
   const [parcels, setParcels] = useState([]);
   const [filteredParcels, setFilteredParcels] = useState([]);
+  const [report, setReport] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // เลือก วัน เดือน ปี
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [monthDate, setMonthDate] = useState(null);
-  const [yearDate, setYearDate] = useState(null);
+  // ช่วงเวลา
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [periodType, setPeriodType] = useState("daily");
 
   useEffect(() => {
     const fetchParcels = async () => {
@@ -24,10 +24,7 @@ const Dashboard = () => {
         const res = await axios.get(
           "http://localhost:4000/admin-ban-poolsub/getParcels",
           {
-            auth: {
-              username: "admin",
-              password: "bands",
-            },
+            auth: { username: "admin", password: "bands" },
           }
         );
         setParcels(res.data);
@@ -35,107 +32,115 @@ const Dashboard = () => {
       } catch (err) {
         console.error("Error fetching parcels:", err);
       } finally {
-        setLoading(false); // ✅ ไม่ว่าจะสำเร็จหรือ error ให้หยุดโหลด
+        setLoading(false);
       }
     };
     fetchParcels();
   }, []);
 
+  // กรองพัสดุตามช่วงเวลา
   const filterByDate = () => {
+    if (!selectedDate) return setFilteredParcels(parcels.slice(0, 10));
+
     const filtered = parcels.filter((p) => {
-      const parcelDate = new Date(p.update_at);
-      let start = startDate;
-      let end = endDate;
-
-      // ถ้าเลือก month
-      if (monthDate) {
-        start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-        end = new Date(
-          monthDate.getFullYear(),
-          monthDate.getMonth() + 1,
-          0,
-          23,
-          59,
-          59
+      const parcelDate = dayjs(p.update_at);
+      if (periodType === "daily") return parcelDate.isSame(selectedDate, "day");
+      if (periodType === "weekly")
+        return (
+          parcelDate.week() === dayjs(selectedDate).week() &&
+          parcelDate.year() === dayjs(selectedDate).year()
         );
-      }
-
-      // ถ้าเลือก year
-      if (yearDate) {
-        start = new Date(yearDate.getFullYear(), 0, 1);
-        end = new Date(yearDate.getFullYear(), 11, 31, 23, 59, 59);
-      }
-
-      // ถ้าไม่มี start/end ให้ default
-      if (!start) start = new Date("1970-01-01");
-      if (!end) end = new Date();
-
-      return parcelDate >= start && parcelDate <= end;
+      if (periodType === "monthly")
+        return parcelDate.isSame(selectedDate, "month");
+      return false;
     });
 
     setFilteredParcels(filtered);
   };
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
+  // ประมวลผลรายงานสรุปตามช่วงเวลา
+  useEffect(() => {
+    if (!selectedDate || parcels.length === 0) return setReport([]);
+
+    const filtered = parcels.filter((p) => {
+      if (!p.update_at) return false;
+      const date = dayjs(p.update_at);
+
+      if (periodType === "daily") return date.isSame(selectedDate, "day");
+      if (periodType === "weekly")
+        return (
+          date.week() === dayjs(selectedDate).week() &&
+          date.year() === dayjs(selectedDate).year()
+        );
+      if (periodType === "monthly") return date.isSame(selectedDate, "month");
+      return false;
+    });
+
+    const grouped = {};
+    filtered.forEach((p) => {
+      const key = p.sender;
+      if (!grouped[key])
+        grouped[key] = { sender: p.sender, totalParcels: 0, totalPrice: 0 };
+      grouped[key].totalParcels += 1;
+      grouped[key].totalPrice += Number(p.price || 0);
+    });
+
+    setReport(Object.values(grouped));
+  }, [parcels, selectedDate, periodType]);
+
+  if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      style={{ padding: "20px", fontFamily: "sans-serif" }}
+    >
       <h1 className="text-2xl font-bold">Dashboard Admin</h1>
 
-      {/* ค้นหาพัสดุจาก วัน เดือน ปี */}
-      <div>
-        <div>
-          <label>เริ่มวันที่ :</label>
-          <DatePicker
-            selected={startDate}
-            onChange={(date) => setStartDate(date)}
-            dateFormat="yyyy-MM-dd"
-            isClearable
-            placeholderText="เลือกวันที่เริ่ม"
-          />
-        </div>
+      {/* เลือกช่วงเวลา */}
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "20px",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <DatePicker
+          selected={selectedDate}
+          onChange={(date) => setSelectedDate(date)}
+          placeholderText="เลือกวัน/สัปดาห์/เดือน"
+          dateFormat={periodType === "monthly" ? "MM/yyyy" : "yyyy-MM-dd"}
+          showMonthYearPicker={periodType === "monthly"}
+          isClearable
+        />
 
-        <div>
-          <label>ถึงวันที่ :</label>
-          <DatePicker
-            selected={endDate}
-            onChange={(date) => setEndDate(date)}
-            dateFormat="yyyy-MM-dd"
-            isClearable
-            placeholderText="เลือกวันที่สิ้นสุด"
-          />
-        </div>
+        <select
+          value={periodType}
+          onChange={(e) => setPeriodType(e.target.value)}
+          style={{ padding: "6px" }}
+        >
+          <option value="daily">รายวัน</option>
+          <option value="weekly">รายสัปดาห์</option>
+          <option value="monthly">รายเดือน</option>
+        </select>
 
-        <div>
-          <label>เลือกเดือน :</label>
-          <DatePicker
-            selected={monthDate}
-            onChange={(date) => setMonthDate(date)}
-            dateFormat="yyyy-MM"
-            showMonthYearPicker
-            isClearable
-            placeholderText="เลือกเดือน"
-          />
-        </div>
-
-        <div>
-          <label>เลือกปี :</label>
-          <DatePicker
-            selected={yearDate}
-            onChange={(date) => setYearDate(date)}
-            showYearPicker
-            dateFormat="yyyy"
-            isClearable
-            placeholderText="เลือกปี"
-          />
-        </div>
-
-        <button onClick={filterByDate}>ค้นหา</button>
+        <button
+          onClick={filterByDate}
+          style={{
+            padding: "6px 12px",
+            backgroundColor: "#d71a28",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+          }}
+        >
+          ค้นหา
+        </button>
       </div>
 
-      {/* สถิติ พัสดุทั้งหมด */}
+      {/* สถิติพัสดุ */}
       <div className="flex gap-4">
         <div className="bg-green-100 rounded-lg p-4 flex-1 text-center">
           <p className="text-sm text-gray-600">พัสดุทั้งหมด</p>

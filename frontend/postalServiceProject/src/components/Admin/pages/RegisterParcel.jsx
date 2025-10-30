@@ -9,10 +9,6 @@ const RegisterParcel = () => {
   const [receiver, setReceiver] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
 
-  const [address, setAddress] = useState("");
-  const [weight, setWeight] = useState(0);
-  const [serviceType] = useState("EMS");
-
   const [houseNumber, setHouseNumber] = useState("");
   const [village, setVillage] = useState("");
   const [soi, setSoi] = useState("");
@@ -21,6 +17,11 @@ const RegisterParcel = () => {
   const [amphoe, setAmphoe] = useState("");
   const [province, setProvince] = useState("");
   const [zipcode, setZipcode] = useState("");
+
+  const [address, setAddress] = useState("");
+  const [weight, setWeight] = useState(0);
+  const [packagingCost, setPackagingCost] = useState(0);
+  const [serviceType] = useState("EMS");
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -49,12 +50,15 @@ const RegisterParcel = () => {
       const res = await axios.post(
         "http://localhost:4000/admin-ban-poolsub/registerParcel",
         {
-          tracking_number: trackingNumber,
+          tracking_number: trackingNumber, // ตรงกับ schema
           sender,
+          sender_phone: senderPhone, // เปลี่ยนชื่อให้ตรงกับ schema
           receiver,
+          receiver_phone: receiverPhone, // เปลี่ยนชื่อให้ตรงกับ schema
           address: fullAddress,
           weight,
-          service_type: serviceType,
+          total_equipment_price: packagingCost, // เปลี่ยนจาก packagingCost
+          service_type: serviceType, // EMS
         },
         {
           auth: {
@@ -68,9 +72,19 @@ const RegisterParcel = () => {
       // รีเซ็ตฟอร์ม
       setTrackingNumber("");
       setSender("");
+      setSenderPhone("");
       setReceiver("");
-      setAddress("");
+      setReceiverPhone("");
+      setHouseNumber("");
+      setVillage("");
+      setSoi("");
+      setRoad("");
+      setDistrict("");
+      setAmphoe("");
+      setProvince("");
+      setZipcode("");
       setWeight(0);
+      setPackagingCost(0);
     } catch (err) {
       console.error(err);
       setMessage(
@@ -85,22 +99,38 @@ const RegisterParcel = () => {
     const value = e.target.value;
     setZipcode(value);
 
-    if (value.length === 5) {
+    if (/^\d{5}$/.test(value)) {
       try {
         const res = await axios.get(
-          `http://localhost:4000/admin-ban-poolsub/getAddressByZipcode/${value}`
+          `http://localhost:4000/admin-ban-poolsub/getAddressByZipcode?zipcode=${value}`,
+          {
+            auth: { username: "admin", password: "bands" },
+          }
         );
+        const addr = res.data;
 
-        const data = res.data;
-        setDistrict(data.district);
-        setAmphoe(data.amphoe);
-        setProvince(data.province);
+        setDistrict(addr.district || "");
+        setAmphoe(addr.amphoe || "");
+        setProvince(addr.province || "");
+        setSubdistrict(addr.subdistrict || "");
       } catch (err) {
         console.error(err);
+        // ล้างค่าอัตโนมัติเมื่อไม่เจอข้อมูล
         setDistrict("");
         setAmphoe("");
         setProvince("");
+        setVillage("");
+        setRoad("");
+        setSoi("");
       }
+    } else {
+      // ล้างค่าอัตโนมัติถ้าไม่ครบ 5 หลัก
+      setDistrict("");
+      setAmphoe("");
+      setProvince("");
+      setVillage("");
+      setRoad("");
+      setSoi("");
     }
   };
 
@@ -126,12 +156,23 @@ const RegisterParcel = () => {
     }
   };
 
+  const handleWeightChange = (e) => {
+    // เอาเลขข้างหน้า 0 ออก
+    const value = e.target.value.replace(/^0+(?=\d)/, "");
+    setWeight(Number(value) || 0);
+  };
+
+  const handlePackagingChange = (e) => {
+    const value = e.target.value.replace(/^0+(?=\d)/, "");
+    setPackagingCost(Number(value) || 0);
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto p-4 border rounded shadow">
       <h1 className="text-xl font-bold mb-4 text-cente">ลงทะเบียนพัสดุใหม่</h1>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label>Tracking Number :</label>
+          <label>เลขพัสดุ :</label>
           <input
             type="text"
             value={trackingNumber}
@@ -251,33 +292,8 @@ const RegisterParcel = () => {
           <label>รหัสไปรษณีย์ :</label>
           <input
             type="text"
-            onChange={async (e) => {
-              const value = e.target.value;
-              setZipcode(value);
-
-              if (value.length === 5) {
-                try {
-                  const res = await axios.get(
-                    `http://localhost:4000/admin-ban-poolsub/getAddressByZipcode?zipcode=${value}`,
-                    {
-                      auth: {
-                        username: "admin",
-                        password: "bands",
-                      },
-                    }
-                  );
-                  const data = res.data;
-                  setDistrict(data.district);
-                  setAmphoe(data.amphoe);
-                  setProvince(data.province);
-                } catch (err) {
-                  console.error(err);
-                  setDistrict("");
-                  setAmphoe("");
-                  setProvince("");
-                }
-              }
-            }}
+            value={zipcode}
+            onChange={handleZipcodeChange}
             className="w-full border p-2 rounded"
           />
         </div>
@@ -292,6 +308,33 @@ const RegisterParcel = () => {
             className="w-full border p-2 rounded"
           />
         </div>
+
+        <hr className="my-4 border-t-2 border-gray-300" />
+
+        {/* น้ำหนักและค่าอุปกรณ์ */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label>น้ำหนักพัสดุ (kg) :</label>
+            <input
+              type="number"
+              value={weight}
+              onChange={handleWeightChange}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          <div className="flex-1">
+            <label>ค่าอุปกรณ์ (บาท) :</label>
+            <input
+              type="number"
+              value={packagingCost}
+              onChange={handlePackagingChange}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+        </div>
+
+        <hr className="my-4 border-t-2 border-gray-300" />
 
         <button
           type="submit"
