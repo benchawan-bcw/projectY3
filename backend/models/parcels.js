@@ -10,11 +10,14 @@ const ParcelsSchema = new mongoose.Schema({
   address: { type: String, required: true },
   weight: { type: Number, required: true },
   equipment: [EquipmentSchema],
-  total_equipment_price: { type: Number, default: 0 },
+  total_equipment: { type: Number, default: 0 },
   service_type: { type: String, default: "EMS" },
   shipping_cost: { type: Number, default: 0 },
-  status: { type: String, default: "รออัปเดต" },
-  update_at: { type: Date, default: Date.now }
+  total_price: { type: Number, default: 0 }, //รวมค่าส่ง + อุปกรณ์
+  net_price: { type: Number, default: 0 }, //ราคาสุทธิ (ใช้พิมพ์ใบเสร็จ)
+  receipt_number: { type: String, default: null }, // หมายเลขใบเสร็จ
+  status: { type: String, default: "อยู่ที่ร้านรับฝากส่ง" },
+  update_at: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("Parcels", ParcelsSchema);

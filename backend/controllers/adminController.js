@@ -24,6 +24,7 @@ exports.registerParcel = async (req, res) => {
       weight,
       equipment,
       service_type,
+      postcode,
       isIsland = false,
       packagingCost = 0,
     } = req.body;
@@ -98,9 +99,10 @@ exports.registerParcel = async (req, res) => {
     console.log("req.body:", req.body);
 
     const shippingCost = calculateEmsCost(weight, isIsland, packagingCost);
-    const totoal_equipment = Array.isArray(equipment)
+    const total_equipment = Array.isArray(equipment)
       ? equipment.reduce((total, item) => total + item.price, 0)
       : equipment.price;
+    const net_price = total_price - discount;
 
     const parcel = await Parcels.create({
       tracking_number,
@@ -114,7 +116,9 @@ exports.registerParcel = async (req, res) => {
       service_type: service_type || "EMS",
       status: trackingInfo?.status || "รออัปเดต",
       shipping_cost: shippingCost,
-      total_equipment: totoal_equipment,
+      total_equipment,
+      total_price,
+      net_price,
       update_at: new Date(),
     });
 
@@ -174,42 +178,71 @@ exports.calculateEms = (req, res) => {
   }
 };
 
-//ดึงข้อมูลที่อยู่จากรหัสไปรษณีย์
-exports.getAddressByZipcode = async (req, res) => {
+// ดึงรายชื่อจังหวัดทั้งหมด
+exports.getProvinces = async (req, res) => {
   try {
-    const { zipcode } = req.query;
-    if (!zipcode || !/^\d{5}$/.test(zipcode)) {
-      return res.status(400).json({ message: "กรุณากรอกรหัสไปรษณีย์ 5 หลัก" });
-    }
-
     const response = await fetch(
-      `https://thaiaddressapi-thaipost.vercel.app/v1/zipcode/${zipcode}`
+      "https://thaiaddressapi-thaikub.herokuapp.com/v1/thailand/provinces"
     );
 
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
+      return res.status(500).json({ message: "ไม่สามารถดึงข้อมูลจังหวัดได้" });
     }
 
     const data = await response.json();
+    const provinces = data.data.map((p) => p.province);
 
-    if (!Array.isArray(data) || data.length === 0) {
-      return res.status(404).json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
-    }
-
-    // เลือกตำบลแรก
-    const addr = data[0];
-
-    res.status(200).json({
-      zipcode: addr.zipcode,
-      district: addr.district || "",
-      amphoe: addr.amphoe || "",
-      province: addr.province || "",
-      subdistrict: addr.subdistrict || "",
+    res.json({
+      success: true,
+      count: provinces.length,
+      provinces,
     });
   } catch (error) {
-    console.error("Error fetching address:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
+    console.error("Error fetching provinces:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
+
+//ดึงข้อมูลที่อยู่จากรหัสไปรษณีย์
+// exports.getAddressByZipcode = async (req, res) => {
+//   try {
+//     const { zipcode } = req.query;
+//     if (!zipcode || !/^\d{5}$/.test(zipcode)) {
+//       return res.status(400).json({ message: "กรุณากรอกรหัสไปรษณีย์ 5 หลัก" });
+//     }
+
+//     const response = await fetch(
+//       `https://thaiaddressapi-thaipost.vercel.app/v1/zipcode/${zipcode}`
+//     );
+
+//     if (!response.ok) {
+//       return res
+//         .status(response.status)
+//         .json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
+//     }
+
+//     const result = await response.json();
+
+//     console.log("API Response:", result);
+
+//     // ✅ ตรวจให้ถูกต้องตามโครงสร้างจริง
+//     if (!result.data || result.data.length === 0) {
+//       return res.status(404).json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
+//     }
+
+//     const addr = result.data[0]; // ใช้ result.data
+
+//     res.status(200).json({
+//       zipcode: addr.zipcode,
+//       district: addr.district || "",
+//       amphoe: addr.amphoe || "",
+//       province: addr.province || "",
+//       subdistrict: addr.subdistrict || "",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching address:", error);
+//     res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
+//   }
+// };

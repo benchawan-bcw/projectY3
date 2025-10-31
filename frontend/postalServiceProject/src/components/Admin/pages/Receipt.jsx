@@ -4,7 +4,6 @@ import axios from "axios";
 const Receipt = () => {
   const [receiverName, setReceiverName] = useState("");
   const [parcel, setParcel] = useState(null);
-  const [paperSize, setPaperSize] = useState("80mm"); // 58mm หรือ 80mm
   const receiptRef = useRef();
 
   const fetchParcel = async () => {
@@ -39,56 +38,38 @@ const Receipt = () => {
   };
 
   const handlePrint = () => {
-    if (!parcel) return;
-
-    // เปิดหน้าต่างใหม่สำหรับปริ้น
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
-      <html>
-        <head>
-          <title>ใบเสร็จ</title>
-          <style>
-            @media print {
-              body {
-                width: ${paperSize};
-                font-family: sans-serif;
-                margin: 0;
-                padding: 5mm;
-              }
-              .receipt {
-                width: 100%;
-              }
-            }
-            body {
-              font-family: sans-serif;
-              padding: 5mm;
-            }
-            .receipt {
-              border: 1px solid #000;
-              padding: 5px;
-              width: ${paperSize};
-            }
-          </style>
-        </head>
-        <body>
-          <div class="receipt">
-            <p><b>หมายเลขพัสดุ:</b> ${parcel.tracking_number}</p>
-            <p><b>ผู้ส่ง:</b> ${parcel.sender}</p>
-            <p><b>ผู้รับ:</b> ${parcel.receiver}</p>
-            <p><b>ที่อยู่:</b> ${parcel.address}</p>
-            <p><b>น้ำหนัก:</b> ${parcel.weight} กก.</p>
-            <p><b>บริการ:</b> ${parcel.service_type}</p>
-            ${
-              parcel.price ? `<p><b>ค่าบริการ:</b> ${parcel.price} บาท</p>` : ""
-            }
-            <p><b>สถานะ:</b> ${parcel.status}</p>
-          </div>
-        </body>
-      </html>
-    `);
+    <html>
+      <head>
+        <title>ใบเสร็จ</title>
+        <style>
+          @page { size: auto; margin: 0; }
+          body { font-family: 'TH SarabunPSK', sans-serif; font-size: 14px; padding: 10px; }
+          .receipt { width: 100%; }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <h3 style="text-align:center;">ใบเสร็จรับพัสดุ</h3>
+          <p>หมายเลขพัสดุ: ${parcel.tracking_number}</p>
+          <p>ผู้ส่ง: ${parcel.sender}</p>
+          <p>ผู้รับ: ${parcel.receiver}</p>
+          <p>ที่อยู่: ${parcel.address}</p>
+          <p>บริการ: ${parcel.service_type}</p>
+          <p>น้ำหนัก: ${parcel.weight} กก.</p>
+          <p>ค่าบริการ: ${parcel.price} บาท</p>
+        </div>
+      </body>
+    </html>
+  `);
     printWindow.document.close();
-    printWindow.focus();
-    printWindow.print(); // เรียกเครื่องพิมพ์
+
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print(); // ✅ จะเปิดหน้าต่างพิมพ์ของเครื่องจริง
+      printWindow.onafterprint = () => printWindow.close();
+    };
   };
 
   return (
@@ -104,17 +85,6 @@ const Receipt = () => {
           style={{ marginRight: "10px" }}
         />
         <button onClick={fetchParcel}>ค้นหา</button>
-      </div>
-
-      <div style={{ marginBottom: "15px" }}>
-        <label>เลือกขนาดกระดาษ: </label>
-        <select
-          value={paperSize}
-          onChange={(e) => setPaperSize(e.target.value)}
-        >
-          <option value="58mm">🧾 58 mm</option>
-          <option value="80mm">🧾 80 mm</option>
-        </select>
       </div>
 
       {parcel && (

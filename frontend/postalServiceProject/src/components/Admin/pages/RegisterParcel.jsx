@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-// import { set } from "mongoose";
+import AddressDropdown from "../components/AddressDropdown";
 
 const RegisterParcel = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -13,52 +13,74 @@ const RegisterParcel = () => {
   const [village, setVillage] = useState("");
   const [soi, setSoi] = useState("");
   const [road, setRoad] = useState("");
-  const [district, setDistrict] = useState("");
-  const [amphoe, setAmphoe] = useState("");
-  const [province, setProvince] = useState("");
-  const [zipcode, setZipcode] = useState("");
 
-  const [address, setAddress] = useState("");
   const [weight, setWeight] = useState(0);
   const [packagingCost, setPackagingCost] = useState(0);
   const [serviceType] = useState("EMS");
 
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      alert("Scanned: " + trackingNumber);
-      setTrackingNumber(""); // reset input
-    }
+  const [addressData, setAddressData] = useState({
+    district: "",
+    amphoe: "",
+    province: "",
+    zipcode: "",
+  });
+
+  const handleAddressChange = (data) => {
+    console.log("ที่อยู่ที่เลือก:", data);
+    setAddressData(data);
   };
+
+  const formDivRef = useRef(null);
+  const longdoForm = useRef(null);
+
+  // โหลด Longdo Address Form
+  useEffect(() => {
+    if (window.longdo && formDivRef.current) {
+      longdoForm.current = new window.longdo.AddressForm(formDivRef.current, {
+        showLabels: true,
+        debugDiv: null,
+      });
+
+      longdoForm.current.onChange = (data) => {
+        setAddressData({
+          district: data.district || "",
+          amphoe: data.amphoe || "",
+          province: data.province || "",
+          zipcode: data.zipcode || "",
+        });
+      };
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
-    if (!trackingNumber || !sender || !receiver || !address || weight <= 0) {
+    if (!trackingNumber || !sender || !receiver || weight <= 0) {
       setMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
       setLoading(false);
       return;
     }
 
     try {
-      const fullAddress = `${houseNumber} หมู่ที่${village} ซอย${soi} ถนน${road} ต.${district} อ.${amphoe} จ.${province} ${zipcode}`;
+      const fullAddress = `${houseNumber} หมู่ที่${village} ซอย${soi} ถนน${road} ต.${addressData.district} อ.${addressData.amphoe} จ.${addressData.province} ${addressData.zipcode}`;
+
       const res = await axios.post(
         "http://localhost:4000/admin-ban-poolsub/registerParcel",
         {
-          tracking_number: trackingNumber, // ตรงกับ schema
+          tracking_number: trackingNumber,
           sender,
-          sender_phone: senderPhone, // เปลี่ยนชื่อให้ตรงกับ schema
+          sender_phone: senderPhone,
           receiver,
-          receiver_phone: receiverPhone, // เปลี่ยนชื่อให้ตรงกับ schema
+          receiver_phone: receiverPhone,
           address: fullAddress,
           weight,
-          total_equipment_price: packagingCost, // เปลี่ยนจาก packagingCost
-          service_type: serviceType, // EMS
+          total_equipment_price: packagingCost,
+          service_type: serviceType,
         },
         {
           auth: {
@@ -68,7 +90,8 @@ const RegisterParcel = () => {
         }
       );
 
-      setMessage(res.data.message);
+      setMessage(res.data.message || "ลงทะเบียนพัสดุสำเร็จ");
+
       // รีเซ็ตฟอร์ม
       setTrackingNumber("");
       setSender("");
@@ -79,12 +102,11 @@ const RegisterParcel = () => {
       setVillage("");
       setSoi("");
       setRoad("");
-      setDistrict("");
-      setAmphoe("");
-      setProvince("");
-      setZipcode("");
+      setAddressData({ district: "", amphoe: "", province: "", zipcode: "" });
       setWeight(0);
       setPackagingCost(0);
+
+      if (longdoForm.current) longdoForm.current.resetForm();
     } catch (err) {
       console.error(err);
       setMessage(
@@ -95,81 +117,9 @@ const RegisterParcel = () => {
     }
   };
 
-  const handleZipcodeChange = async (e) => {
-    const value = e.target.value;
-    setZipcode(value);
-
-    if (/^\d{5}$/.test(value)) {
-      try {
-        const res = await axios.get(
-          `http://localhost:4000/admin-ban-poolsub/getAddressByZipcode?zipcode=${value}`,
-          {
-            auth: { username: "admin", password: "bands" },
-          }
-        );
-        const addr = res.data;
-
-        setDistrict(addr.district || "");
-        setAmphoe(addr.amphoe || "");
-        setProvince(addr.province || "");
-        setSubdistrict(addr.subdistrict || "");
-      } catch (err) {
-        console.error(err);
-        // ล้างค่าอัตโนมัติเมื่อไม่เจอข้อมูล
-        setDistrict("");
-        setAmphoe("");
-        setProvince("");
-        setVillage("");
-        setRoad("");
-        setSoi("");
-      }
-    } else {
-      // ล้างค่าอัตโนมัติถ้าไม่ครบ 5 หลัก
-      setDistrict("");
-      setAmphoe("");
-      setProvince("");
-      setVillage("");
-      setRoad("");
-      setSoi("");
-    }
-  };
-
-  const getAddressByZipcode = async (zipcode) => {
-    if (!zipcode || zipcode.length !== 5) return;
-
-    try {
-      const res = await axios.get(
-        `https://thaiaddressapi-thaipost.vercel.app/v1/zipcode/${zipcode}`
-      );
-
-      if (res.data && res.data.data.length > 0) {
-        const info = res.data.data[0];
-        setDistrict(info.district);
-        setAmphoe(info.amphoe);
-        setProvince(info.province);
-      } else {
-        alert("ไม่พบข้อมูลที่อยู่สำหรับรหัสไปรษณีย์นี้");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("เกิดข้อผิดพลาดในการดึงข้อมูลที่อยู่");
-    }
-  };
-
-  const handleWeightChange = (e) => {
-    // เอาเลขข้างหน้า 0 ออก
-    const value = e.target.value.replace(/^0+(?=\d)/, "");
-    setWeight(Number(value) || 0);
-  };
-
-  const handlePackagingChange = (e) => {
-    const value = e.target.value.replace(/^0+(?=\d)/, "");
-    setPackagingCost(Number(value) || 0);
-  };
-
   return (
     <div className="w-full max-w-2xl mx-auto p-4 border rounded shadow">
-      <h1 className="text-xl font-bold mb-4 text-cente">ลงทะเบียนพัสดุใหม่</h1>
+      <h1 className="text-xl font-bold mb-4 text-center">ลงทะเบียนพัสดุใหม่</h1>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label>เลขพัสดุ :</label>
@@ -177,14 +127,10 @@ const RegisterParcel = () => {
             type="text"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
-            onKeyPress={handleKeyPress}
-            autoFocus
             placeholder="แสกนหรือพิมพ์เลขพัสดุ"
             className="w-full border p-2 rounded"
           />
         </div>
-
-        <hr className="my-4 border-t-2 border-gray-300" />
 
         <div>
           <label>ชื่อผู้ส่ง :</label>
@@ -196,9 +142,8 @@ const RegisterParcel = () => {
           />
         </div>
 
-        {/* แก้ */}
         <div>
-          <label>เบอร์โทรศัพท์ :</label>
+          <label>เบอร์โทรผู้ส่ง :</label>
           <input
             type="text"
             value={senderPhone}
@@ -206,8 +151,6 @@ const RegisterParcel = () => {
             className="w-full border p-2 rounded"
           />
         </div>
-
-        <hr className="my-4 border-t-2 border-gray-300" />
 
         <div>
           <label>ชื่อผู้รับ :</label>
@@ -218,8 +161,9 @@ const RegisterParcel = () => {
             className="w-full border p-2 rounded"
           />
         </div>
+
         <div>
-          <label>บ้านเลขที่ : </label>
+          <label>บ้านเลขที่ :</label>
           <input
             type="text"
             value={houseNumber}
@@ -228,7 +172,6 @@ const RegisterParcel = () => {
           />
         </div>
 
-        {/* หมู่ที่, ซอย, ถนน */}
         <div className="flex gap-4">
           <div className="flex-1">
             <label>หมู่ที่ :</label>
@@ -260,81 +203,35 @@ const RegisterParcel = () => {
         </div>
 
         <div>
-          <label>แขวง/ตำบล : </label>
-          <input
-            type="text"
-            value={district}
-            readOnly
-            className="w-full border p-2 rounded"
-          />
-        </div>
-        <div>
-          <label>เขต/อำเภอ : </label>
-          <input
-            type="text"
-            value={amphoe}
-            readOnly
-            className="w-full border p-2 rounded"
-          />
-        </div>
-        <div>
-          <label>จังหวัด :</label>
-          <input
-            type="text"
-            value={province}
-            readOnly
-            className="w-full border p-2 rounded"
-          />
+          <label>กรอกรหัสไปรษณีย์ / เลือกตำบล-อำเภอ-จังหวัด:</label>
+          <AddressDropdown onChange={handleAddressChange} />
         </div>
 
-        {/* แก้ */}
-        <div>
-          <label>รหัสไปรษณีย์ :</label>
-          <input
-            type="text"
-            value={zipcode}
-            onChange={handleZipcodeChange}
-            className="w-full border p-2 rounded"
-          />
+        <div style={{ marginTop: "1rem" }}>
+          <strong>ข้อมูลที่เลือก:</strong>
+          <pre>{JSON.stringify(addressData, null, 2)}</pre>
         </div>
 
-        {/* แก้ */}
-        <div>
-          <label>เบอร์โทรศัพท์ :</label>
-          <input
-            type="text"
-            value={receiverPhone}
-            onChange={(e) => setReceiverPhone(e.target.value)}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <hr className="my-4 border-t-2 border-gray-300" />
-
-        {/* น้ำหนักและค่าอุปกรณ์ */}
         <div className="flex gap-4">
           <div className="flex-1">
             <label>น้ำหนักพัสดุ (kg) :</label>
             <input
               type="number"
               value={weight}
-              onChange={handleWeightChange}
+              onChange={(e) => setWeight(Number(e.target.value) || 0)}
               className="w-full border p-2 rounded"
             />
           </div>
-
           <div className="flex-1">
             <label>ค่าอุปกรณ์ (บาท) :</label>
             <input
               type="number"
               value={packagingCost}
-              onChange={handlePackagingChange}
+              onChange={(e) => setPackagingCost(Number(e.target.value) || 0)}
               className="w-full border p-2 rounded"
             />
           </div>
         </div>
-
-        <hr className="my-4 border-t-2 border-gray-300" />
 
         <button
           type="submit"
@@ -343,8 +240,9 @@ const RegisterParcel = () => {
         >
           {loading ? "กำลังลงบันทึก..." : "บันทึกพัสดุ"}
         </button>
+
+        {message && <p className="mt-3 text-center">{message}</p>}
       </form>
-      {message && <p className="mt-3 text-center">{message}</p>}
     </div>
   );
 };
