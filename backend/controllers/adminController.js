@@ -27,6 +27,7 @@ exports.registerParcel = async (req, res) => {
       postcode,
       isIsland = false,
       packagingCost = 0,
+      total_price = 0,
     } = req.body;
 
     if (
@@ -102,7 +103,7 @@ exports.registerParcel = async (req, res) => {
     const total_equipment = Array.isArray(equipment)
       ? equipment.reduce((total, item) => total + item.price, 0)
       : equipment.price;
-    const net_price = total_price - discount;
+    const net_price = total_price;
 
     const parcel = await Parcels.create({
       tracking_number,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import AddressDropdown from "../components/AddressDropdown";
+import LongdoAddressIframe from "../components/LongdoAddressIframe";
 
 const RegisterParcel = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -15,59 +15,54 @@ const RegisterParcel = () => {
   const [road, setRoad] = useState("");
 
   const [weight, setWeight] = useState(0);
-  const [packagingCost, setPackagingCost] = useState(0);
+  const [equipment, setEquipment] = useState([]); // array of { name, price }
+  const [totalEquipment, setTotalEquipment] = useState(0);
   const [serviceType] = useState("EMS");
+  const [shippingCost, setShippingCost] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [netPrice, setNetPrice] = useState(0);
+
+  const [addressData, setAddressData] = useState({});
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [addressData, setAddressData] = useState({
-    district: "",
-    amphoe: "",
-    province: "",
-    zipcode: "",
-  });
+  // อัปเดตค่า totalEquipment / totalPrice / netPrice อัตโนมัติ
+  // const recalcPrice = () => {
+  //   const totalEq = equipment.reduce((sum, item) => sum + (item.price || 0), 0);
+  //   setTotalEquipment(totalEq);
+  //   setTotalPrice(totalEq + shippingCost);
+  //   setNetPrice(totalEq + shippingCost); // ถ้าไม่มีอะไรซับซ้อน
+  // };
 
-  const handleAddressChange = (data) => {
-    console.log("ที่อยู่ที่เลือก:", data);
-    setAddressData(data);
-  };
-
-  const formDivRef = useRef(null);
-  const longdoForm = useRef(null);
-
-  // โหลด Longdo Address Form
-  useEffect(() => {
-    if (window.longdo && formDivRef.current) {
-      longdoForm.current = new window.longdo.AddressForm(formDivRef.current, {
-        showLabels: true,
-        debugDiv: null,
-      });
-
-      longdoForm.current.onChange = (data) => {
-        setAddressData({
-          district: data.district || "",
-          amphoe: data.amphoe || "",
-          province: data.province || "",
-          zipcode: data.zipcode || "",
-        });
-      };
-    }
-  }, []);
+  // const handleAddEquipment = (name, price) => {
+  //   setEquipment((prev) => [...prev, { name, price }]);
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
-    if (!trackingNumber || !sender || !receiver || weight <= 0) {
+    if (
+      !trackingNumber ||
+      !sender ||
+      !receiver ||
+      weight <= 0 ||
+      !addressData.district
+    ) {
       setMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
-      setLoading(false);
       return;
     }
 
     try {
-      const fullAddress = `${houseNumber} หมู่ที่${village} ซอย${soi} ถนน${road} ต.${addressData.district} อ.${addressData.amphoe} จ.${addressData.province} ${addressData.zipcode}`;
+      const fullAddress = `${addressData.houseNumber || ""} หมู่ที่${
+        addressData.village || ""
+      } ซอย${addressData.soi || ""} ถนน${addressData.road || ""} ต.${
+        addressData.district
+      } อ.${addressData.amphoe} จ.${addressData.province} ${
+        addressData.zipcode
+      }`;
 
       const res = await axios.post(
         "http://localhost:4000/admin-ban-poolsub/registerParcel",
@@ -79,8 +74,12 @@ const RegisterParcel = () => {
           receiver_phone: receiverPhone,
           address: fullAddress,
           weight,
-          total_equipment_price: packagingCost,
+          equipment,
+          total_equipment: totalEquipment,
           service_type: serviceType,
+          shipping_cost: shippingCost,
+          total_price: totalPrice,
+          net_price: netPrice,
         },
         {
           auth: {
@@ -92,21 +91,19 @@ const RegisterParcel = () => {
 
       setMessage(res.data.message || "ลงทะเบียนพัสดุสำเร็จ");
 
-      // รีเซ็ตฟอร์ม
+      // reset form
       setTrackingNumber("");
       setSender("");
       setSenderPhone("");
       setReceiver("");
       setReceiverPhone("");
-      setHouseNumber("");
-      setVillage("");
-      setSoi("");
-      setRoad("");
-      setAddressData({ district: "", amphoe: "", province: "", zipcode: "" });
       setWeight(0);
-      setPackagingCost(0);
-
-      if (longdoForm.current) longdoForm.current.resetForm();
+      setEquipment([]);
+      setTotalEquipment(0);
+      setShippingCost(0);
+      setTotalPrice(0);
+      setNetPrice(0);
+      setAddressData({});
     } catch (err) {
       console.error(err);
       setMessage(
@@ -203,13 +200,8 @@ const RegisterParcel = () => {
         </div>
 
         <div>
-          <label>กรอกรหัสไปรษณีย์ / เลือกตำบล-อำเภอ-จังหวัด:</label>
-          <AddressDropdown onChange={handleAddressChange} />
-        </div>
-
-        <div style={{ marginTop: "1rem" }}>
-          <strong>ข้อมูลที่เลือก:</strong>
-          <pre>{JSON.stringify(addressData, null, 2)}</pre>
+          <label className="font-semibold">เลือกที่อยู่:</label>
+          <LongdoAddressIframe onChange={setAddressData} />
         </div>
 
         <div className="flex gap-4">
@@ -222,14 +214,37 @@ const RegisterParcel = () => {
               className="w-full border p-2 rounded"
             />
           </div>
-          <div className="flex-1">
-            <label>ค่าอุปกรณ์ (บาท) :</label>
-            <input
-              type="number"
-              value={packagingCost}
-              onChange={(e) => setPackagingCost(Number(e.target.value) || 0)}
-              className="w-full border p-2 rounded"
-            />
+
+          {/* อุปกรณ์ */}
+          <div>
+            <label className="font-semibold">อุปกรณ์ (เพิ่มได้หลายชิ้น):</label>
+            <button
+              type="button"
+              onClick={() => handleAddEquipment("กล่อง", 20)}
+            >
+              เพิ่มกล่อง 20 บาท
+            </button>
+            <button type="button" onClick={() => handleAddEquipment("เทป", 5)}>
+              เพิ่มเทป 5 บาท
+            </button>
+            <pre>{JSON.stringify(equipment, null, 2)}</pre>
+          </div>
+
+          <input
+            type="number"
+            placeholder="ค่าส่ง (บาท)"
+            value={shippingCost}
+            onChange={(e) => {
+              setShippingCost(Number(e.target.value));
+              recalcPrice();
+            }}
+            className="w-full border p-2 rounded"
+          />
+
+          <div>
+            <p>รวมอุปกรณ์: {totalEquipment} บาท</p>
+            <p>รวมค่าส่ง + อุปกรณ์: {totalPrice} บาท</p>
+            <p>ราคาสุทธิ: {netPrice} บาท</p>
           </div>
         </div>
 
