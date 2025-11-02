@@ -158,7 +158,6 @@ function calculateEmsCost(weight, isIsland = false, packagingCost = 0) {
   return cost;
 }
 
-// Controller สำหรับ API
 exports.calculateEms = (req, res) => {
   try {
     const { weight, postcode, packagingCost } = req.body;
@@ -179,71 +178,3 @@ exports.calculateEms = (req, res) => {
   }
 };
 
-// ดึงรายชื่อจังหวัดทั้งหมด
-exports.getProvinces = async (req, res) => {
-  try {
-    const response = await fetch(
-      "https://thaiaddressapi-thaikub.herokuapp.com/v1/thailand/provinces"
-    );
-
-    if (!response.ok) {
-      return res.status(500).json({ message: "ไม่สามารถดึงข้อมูลจังหวัดได้" });
-    }
-
-    const data = await response.json();
-    const provinces = data.data.map((p) => p.province);
-
-    res.json({
-      success: true,
-      count: provinces.length,
-      provinces,
-    });
-  } catch (error) {
-    console.error("Error fetching provinces:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-
-
-//ดึงข้อมูลที่อยู่จากรหัสไปรษณีย์
-// exports.getAddressByZipcode = async (req, res) => {
-//   try {
-//     const { zipcode } = req.query;
-//     if (!zipcode || !/^\d{5}$/.test(zipcode)) {
-//       return res.status(400).json({ message: "กรุณากรอกรหัสไปรษณีย์ 5 หลัก" });
-//     }
-
-//     const response = await fetch(
-//       `https://thaiaddressapi-thaipost.vercel.app/v1/zipcode/${zipcode}`
-//     );
-
-//     if (!response.ok) {
-//       return res
-//         .status(response.status)
-//         .json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
-//     }
-
-//     const result = await response.json();
-
-//     console.log("API Response:", result);
-
-//     // ✅ ตรวจให้ถูกต้องตามโครงสร้างจริง
-//     if (!result.data || result.data.length === 0) {
-//       return res.status(404).json({ message: "ไม่พบข้อมูลรหัสไปรษณีย์นี้" });
-//     }
-
-//     const addr = result.data[0]; // ใช้ result.data
-
-//     res.status(200).json({
-//       zipcode: addr.zipcode,
-//       district: addr.district || "",
-//       amphoe: addr.amphoe || "",
-//       province: addr.province || "",
-//       subdistrict: addr.subdistrict || "",
-//     });
-//   } catch (error) {
-//     console.error("Error fetching address:", error);
-//     res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
-//   }
-// };

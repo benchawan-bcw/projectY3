@@ -1,48 +1,75 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Longdo Address Form</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://api.longdo.com/map/?key=fortestonlydonotuseinproduction!"></script>
     <script src="https://api.longdo.com/address-form/js/addressform.js"></script>
     <style>
-      body { font-family: Arial, sans-serif; padding: 10px; }
-      #form_div { border: 1px solid #ccc; padding: 10px; border-radius: 6px; }
-      button { margin-top: 5px; margin-right: 5px; }
+      body {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+      }
+      #form_div {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 6px;
+      }
+      button {
+        margin-top: 5px;
+        margin-right: 5px;
+      }
     </style>
     <script>
       var myform;
 
       function init() {
-          myform = new longdo.AddressForm('form_div',{
-            showLabels: false,
-            debugDiv: 'debugoutput'
-          });
+        myform = new longdo.AddressForm("form_div", {
+          showLabels: false,
+          // debugDiv: "debugoutput",
+        });
       }
 
       function submitForm() {
-          if (!myform) return;
-          const data = myform.getFormJSON();
-          // ส่งกลับ parent React
-          window.parent.postMessage({ type: 'LONGDO_ADDRESS', data }, '*');
+        if (!myform) return;
+        const data = myform.getFormJSON();
+        // ส่งกลับ parent React
+        window.parent.postMessage({ type: "LONGDO_ADDRESS", data }, "*");
       }
 
       function resetForm() {
-          if (myform) myform.resetForm();
+        if (myform) myform.resetForm();
       }
     </script>
   </head>
   <body onload="init()">
-    <div style="max-width:700px; margin:auto;">
-      <div style="font-size:1.2em; width:380px; margin:0 auto 1rem; display:inline-block;">
+    <div style="max-width: 700px; margin: auto">
+      <div
+        style="
+          font-size: 1.2em;
+          width: 380px;
+          margin: 0 auto 1rem;
+          display: inline-block;
+        "
+      >
         <div id="form_div">Loading...</div>
         <button onclick="submitForm()">Submit</button>
         <button onclick="resetForm()">Reset</button>
       </div>
-      <div id="debugoutput" style="max-width:20rem;background-color:#fff39c;padding:0.5rem;border-radius:6px;display:inline-block;vertical-align:top;">
+      <!-- <div
+        id="debugoutput"
+        style="
+          max-width: 20rem;
+          background-color: #fff39c;
+          padding: 0.5rem;
+          border-radius: 6px;
+          display: inline-block;
+          vertical-align: top;
+        "
+      >
         ลองกรอกข้อมูลในฟอร์ม
-      </div>
+      </div> -->
     </div>
   </body>
 </html>

@@ -28,16 +28,16 @@ const RegisterParcel = () => {
   const [loading, setLoading] = useState(false);
 
   // อัปเดตค่า totalEquipment / totalPrice / netPrice อัตโนมัติ
-  // const recalcPrice = () => {
-  //   const totalEq = equipment.reduce((sum, item) => sum + (item.price || 0), 0);
-  //   setTotalEquipment(totalEq);
-  //   setTotalPrice(totalEq + shippingCost);
-  //   setNetPrice(totalEq + shippingCost); // ถ้าไม่มีอะไรซับซ้อน
-  // };
+  const recalcPrice = () => {
+    const totalEq = equipment.reduce((sum, item) => sum + (item.price || 0), 0);
+    setTotalEquipment(totalEq);
+    setTotalPrice(totalEq + shippingCost);
+    setNetPrice(totalPrice); // ถ้าไม่มีอะไรซับซ้อน
+  };
 
-  // const handleAddEquipment = (name, price) => {
-  //   setEquipment((prev) => [...prev, { name, price }]);
-  // };
+  const handleAddEquipment = (name, price) => {
+    setEquipment((prev) => [...prev, { name, price }]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,13 +56,38 @@ const RegisterParcel = () => {
     }
 
     try {
-      const fullAddress = `${addressData.houseNumber || ""} หมู่ที่${
-        addressData.village || ""
-      } ซอย${addressData.soi || ""} ถนน${addressData.road || ""} ต.${
+      const fullAddress = [
+        addressData.etc,
+        addressData.subdistrict
+          ? "ต." + addressData.subdistrict.replace(/^ต\./, "")
+          : "",
         addressData.district
-      } อ.${addressData.amphoe} จ.${addressData.province} ${
-        addressData.zipcode
-      }`;
+          ? "อ." + addressData.district.replace(/^อ\./, "")
+          : "",
+        addressData.province
+          ? "จ." + addressData.province.replace(/^จ\./, "")
+          : "",
+        addressData.postal_code || "",
+      ]
+        .map((item) => item.trim()) // ลบ whitespace รอบ ๆ
+        .filter((item) => item) // ลบค่าว่าง
+        .join(" "); // ต่อด้วย space แทน \n
+
+      console.log("📦 ข้อมูลที่จะส่ง:", {
+        tracking_number: trackingNumber,
+        sender,
+        sender_phone: senderPhone,
+        receiver,
+        receiver_phone: receiverPhone,
+        address: fullAddress,
+        weight,
+        equipment,
+        total_equipment: totalEquipment,
+        service_type: serviceType,
+        shipping_cost: shippingCost,
+        total_price: totalPrice,
+        net_price: netPrice,
+      });
 
       const res = await axios.post(
         "http://localhost:4000/admin-ban-poolsub/registerParcel",
@@ -115,9 +140,9 @@ const RegisterParcel = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 border rounded shadow">
+    <div className="w-full px-8">
       <h1 className="text-xl font-bold mb-4 text-center">ลงทะเบียนพัสดุใหม่</h1>
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
         <div>
           <label>เลขพัสดุ :</label>
           <input
@@ -129,84 +154,56 @@ const RegisterParcel = () => {
           />
         </div>
 
-        <div>
-          <label>ชื่อผู้ส่ง :</label>
-          <input
-            type="text"
-            value={sender}
-            onChange={(e) => setSender(e.target.value)}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <div>
-          <label>เบอร์โทรผู้ส่ง :</label>
-          <input
-            type="text"
-            value={senderPhone}
-            onChange={(e) => setSenderPhone(e.target.value)}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <div>
-          <label>ชื่อผู้รับ :</label>
-          <input
-            type="text"
-            value={receiver}
-            onChange={(e) => setReceiver(e.target.value)}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <div>
-          <label>บ้านเลขที่ :</label>
-          <input
-            type="text"
-            value={houseNumber}
-            onChange={(e) => setHouseNumber(e.target.value)}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label>หมู่ที่ :</label>
+        <div className="flex gap-4 w-full">
+          <div className="flex-1 min-w-0 flex flex-col">
+            <label>ชื่อผู้ส่ง :</label>
             <input
               type="text"
-              value={village}
-              onChange={(e) => setVillage(e.target.value)}
+              value={sender}
+              onChange={(e) => setSender(e.target.value)}
               className="w-full border p-2 rounded"
             />
           </div>
-          <div className="flex-1">
-            <label>ซอย :</label>
+          <div className="flex-1 min-w-0 flex flex-col">
+            <label>เบอร์โทรผู้ส่ง :</label>
             <input
               type="text"
-              value={soi}
-              onChange={(e) => setSoi(e.target.value)}
+              value={senderPhone}
+              onChange={(e) => setSenderPhone(e.target.value)}
               className="w-full border p-2 rounded"
             />
           </div>
-          <div className="flex-1">
-            <label>ถนน :</label>
+        </div>
+
+        <div className="flex gap-4 w-full">
+          <div className="flex-1 flex flex-col">
+            <label>ชื่อผู้รับ :</label>
             <input
               type="text"
-              value={road}
-              onChange={(e) => setRoad(e.target.value)}
+              value={receiver}
+              onChange={(e) => setReceiver(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          <div className="flex-1 flex flex-col">
+            <label>เบอร์โทรผู้รับ :</label>
+            <input
+              type="text"
+              value={receiverPhone}
+              onChange={(e) => setReceiverPhone(e.target.value)}
               className="w-full border p-2 rounded"
             />
           </div>
         </div>
 
         <div>
-          <label className="font-semibold">เลือกที่อยู่:</label>
           <LongdoAddressIframe onChange={setAddressData} />
         </div>
 
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label>น้ำหนักพัสดุ (kg) :</label>
+        <div className="flex gap-4 w-full">
+          <div className="flex-1 flex flex-col">
+            <label>น้ำหนักพัสดุ (g) :</label>
             <input
               type="number"
               value={weight}
@@ -214,9 +211,23 @@ const RegisterParcel = () => {
               className="w-full border p-2 rounded"
             />
           </div>
+          <div className="flex-1 flex flex-col">
+            <label>ค่าส่ง :</label>
+            <input
+              type="number"
+              placeholder="ค่าส่ง (บาท)"
+              value={shippingCost}
+              onChange={(e) => {
+                setShippingCost(Number(e.target.value));
+                recalcPrice();
+              }}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+        </div>
 
-          {/* อุปกรณ์ */}
-          <div>
+        <div className="flex gap-4 w-full">
+          <div className="flex-1 flex flex-col">
             <label className="font-semibold">อุปกรณ์ (เพิ่มได้หลายชิ้น):</label>
             <button
               type="button"
@@ -230,19 +241,8 @@ const RegisterParcel = () => {
             <pre>{JSON.stringify(equipment, null, 2)}</pre>
           </div>
 
-          <input
-            type="number"
-            placeholder="ค่าส่ง (บาท)"
-            value={shippingCost}
-            onChange={(e) => {
-              setShippingCost(Number(e.target.value));
-              recalcPrice();
-            }}
-            className="w-full border p-2 rounded"
-          />
-
-          <div>
-            <p>รวมอุปกรณ์: {totalEquipment} บาท</p>
+          <div className="flex-1 flex flex-col">
+            <p>ค่าอุปกรณ์: {totalEquipment} บาท</p>
             <p>รวมค่าส่ง + อุปกรณ์: {totalPrice} บาท</p>
             <p>ราคาสุทธิ: {netPrice} บาท</p>
           </div>

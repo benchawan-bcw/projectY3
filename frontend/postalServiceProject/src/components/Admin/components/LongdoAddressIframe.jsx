@@ -14,7 +14,7 @@ const LongdoAddressIframe = ({ onChange }) => {
   return (
     <iframe
       src="/longdo-form.html"
-      style={{ width: "100%", height: "450px", border: "0" }}
+      style={{ width: "100%", height: "290px", border: "0" }}
       title="Longdo Address Form"
     />
   );

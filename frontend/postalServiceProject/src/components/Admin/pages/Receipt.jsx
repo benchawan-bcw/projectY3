@@ -6,6 +6,8 @@ const Receipt = () => {
   const [senderName, setSenderName] = useState("");
   const [parcels, setParcels] = useState([]);
   const receiptRef = useRef();
+  const today = new Date().toLocaleDateString("th-TH");
+const time = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
 
   const fetchParcel = async () => {
     if (!senderName) return;
@@ -24,21 +26,21 @@ const Receipt = () => {
       if (!Array.isArray(data)) data = [data];
 
       // กรองตามชื่อผู้ส่ง
-       const filtered = data.filter((p) =>
-      p.sender.toLowerCase().includes(senderName.toLowerCase())
-    );
+      const filtered = data.filter((p) =>
+        p.sender.toLowerCase().includes(senderName.toLowerCase())
+      );
 
-    if (filtered.length === 0) {
-      alert("ไม่พบพัสดุของผู้ส่งนี้");
+      if (filtered.length === 0) {
+        alert("ไม่พบพัสดุของผู้ส่งนี้");
+      }
+
+      setParcels(filtered);
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
+      setParcels([]);
     }
-
-    setParcels(filtered);
-  } catch (err) {
-    console.error(err);
-    alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
-    setParcels([]);
-  }
-};
+  };
 
   const handlePrint = () => {
     if (parcels.length === 0) {
@@ -46,7 +48,6 @@ const Receipt = () => {
       return;
     }
     const printWindow = window.open("", "_blank");
-    const today = new Date().toLocaleDateString("th-TH");
 
     printWindow.document.write(`
 <html>
@@ -76,6 +77,11 @@ const Receipt = () => {
         margin-top: 1rem;
         margin-bottom: 0.5rem;
       }
+      .bill-number {
+      text-align: center;
+      font-weight: bold;
+      margin: 0.3rem 0;
+      }
       .section {
         margin: 0.5rem 0;
       }
@@ -88,34 +94,52 @@ const Receipt = () => {
         margin-top: 1.2rem;
         font-size: 16px;
       }
+        .right-info {
+        text-align: right;
+        font-size: 14px;
+        margin-top: 0.5rem;
+        line-height: 1.2;
+      }
     </style>
   </head>
   <body>
     <div class="receipt">
       <div class="header">
         <strong>บ้านไปรษณีย์พูลทรัพย์</strong><br/>
-        Tel. 035-913-183
+        โทร. 035-913-183
+      </div>
+
+      <div class="bill-number">
+        <div>ใบรับเงินเลขที่: ${receiptNumber || "BILL-0001"}</div>
       </div>
       <div class="section">
-        วันที่: ${today}
+        วันที่: ${today} &nbsp;&nbsp; เวลา: ${time}
       </div>
-        <div class="line"></div>
+      <div class="line"></div>
       `);
 
     //แสดงชื่อผู้รับของผู้ส่งนั้น ๆ ทั้งหมด
     parcels.forEach((p, i) => {
       printWindow.document.write(`
-      <div class="receipt">
+    <div class="receipt">
         <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
-        <p><b>เลขที่พัสดุ:</b> ${p.tracking_number || "-"}</p>
-        <p><b>ที่อยู่:</b> ${p.address || "-"}</p>
+        <p><b>ที่อยู่:</b> ${p.zipcode || "-"} ${p.province || ""}</p>
         <p><b>น้ำหนัก:</b> ${p.weight || "-"} กก.</p>
-        <p><b>ราคา:</b> ${p.net_price || p.price || "-"} บาท</p>
+        <p><b>กล่อง / ซอง:</b> ${p.total_equipment || "-"}</p>
       </div>
-        <div class="line"></div>
-    `);
+
+      <div class="right-info">
+        ${p.province || "-"}<br/>
+        ${p.total_equipment || "-"}<br/>
+        ${p.tracking_number || "-"}<br/>
+        EMS: ${shippingCost} .-<br/>
+        รวม: ${totalPrice} .-<br/>
+        ชำระ: ${customerPaid} .-<br/>
+        เงินทอน: ${change} .-
+      </div>
+      <div class="line"></div>
+  `);
     });
-    
 
     printWindow.document.write(`
       <div class="footer">
