@@ -4,7 +4,8 @@ const AdminNavbar = () => {
   const navItems = [
     { to: "/admin", label: "หน้าหลัก" },
     { to: "/admin/RegisterParcel", label: "ลงทะเบียนพัสดุใหม่" },
-    { to: "/admin/Receipt", label: "ใบเสร็จ" },
+    { to: "/admin/Payment", label: "คำนวณค่าจัดส่งพัสดุ" },
+    { to: "/admin/Receipt", label: "พิมพ์ใบเสร็จ" },
     { to: "/admin/ParcelReport", label: "รายงานสถิติพัสดุ" },
   ];
 

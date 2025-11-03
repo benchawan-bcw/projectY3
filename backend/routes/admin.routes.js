@@ -8,6 +8,8 @@ const {
   registerParcel,
   getParcels,
   calculateEms,
+  equipment,
+  selectPayment,
 } = require("../controllers/adminController");
 
 //middleware
@@ -18,5 +20,7 @@ router.use(adminAuth);
 router.post("/registerParcel", registerParcel);
 router.get("/getParcels", getParcels);
 router.post("/calculateEms", calculateEms);
+router.get("/equipment", equipment);
+router.post("/selectPayment", selectPayment);
 
 module.exports = router;

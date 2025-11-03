@@ -4,12 +4,19 @@ const path = require("path");
 const mongoose = require("mongoose");
 const Parcels = require("../models/parcels");
 const { getThaiPostToken } = require("../config/memberToken");
+const qrcode = require("qrcode");
+const generatePayload = require("promptpay-qr");
+
+const dotenv = require("dotenv");
+dotenv.config();
 
 // โหลดไฟล์ JSON
 const dataPath = path.join(__dirname, "../config/islandsPostCode.json");
 const islandData = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
 const emsRatesPath = path.join(__dirname, "../config/emsCost.json");
 const emsRates = JSON.parse(fs.readFileSync(emsRatesPath, "utf-8"));
+const equipmentPath = path.join(__dirname, "../config/equipmentPrice.json");
+const equipment = JSON.parse(fs.readFileSync(equipmentPath, "utf-8"));
 
 // ลงทะเบียนพัสดุใหม่
 exports.registerParcel = async (req, res) => {
@@ -101,8 +108,8 @@ exports.registerParcel = async (req, res) => {
 
     const shippingCost = calculateEmsCost(weight, isIsland, packagingCost);
     const total_equipment = Array.isArray(equipment)
-      ? equipment.reduce((total, item) => total + item.price, 0)
-      : equipment.price;
+      ? equipment.reduce((sum, item) => sum + (item.price || 0), 0)
+      : 0;
     const net_price = total_price;
 
     const parcel = await Parcels.create({
@@ -158,10 +165,11 @@ function calculateEmsCost(weight, isIsland = false, packagingCost = 0) {
   return cost;
 }
 
-exports.calculateEms = (req, res) => {
+exports.calculateEms = async (req, res) => {
   try {
     const { weight, postcode, packagingCost } = req.body;
     // ตรวจสอบพื้นที่เกาะจากรหัสไปรษณีย์
+
     const isIsland = checkIsIsland(postcode);
     const totalCost = calculateEmsCost(weight, isIsland, packagingCost);
 
@@ -178,3 +186,91 @@ exports.calculateEms = (req, res) => {
   }
 };
 
+// equipment
+exports.equipment = async (req, res) => {
+  try {
+    const equipmentPath = path.join(__dirname, "../config/equipmentPrice.json");
+    const data = JSON.parse(fs.readFileSync(equipmentPath, "utf-8"));
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: "ไม่สามารถอ่านไฟล์อุปกรณ์ได้" });
+  }
+};
+
+//ฟังก์ชันชำระเงินสด
+function calculateCash(total_price, customer_paid) {
+  if (!customer_paid || customer_paid < total_price) {
+    return {
+      success: false,
+      message: "จำนวนเงินที่ลูกค้าชำระไม่เพียงพอ",
+    };
+  }
+
+  const change = customer_paid - total_price;
+  return {
+    success: true,
+    payment_method: "cash",
+    total_price,
+    customer_paid,
+    change,
+  };
+}
+
+//ฟังก์ชันชำระเงินโอนผ่าน QR Code
+async function generateQrPayment(amount) {
+  try {
+    const accountNumber = process.env.PROMPTPAY_ACCOUNT;
+    const bankCode = process.env.BANK_CODE || "GSB";
+
+    if (!accountNumber) throw new Error("ไม่พบหมายเลขพร้อมเพย์ในไฟล์ .env");
+
+    const payload = generatePayload(accountNumber, { amount });
+    // แปลง payload เป็น QR Code (Base64)
+    const qrImage = await qrcode.toDataURL(payload);
+
+    return {
+      success: true,
+      payment_method: "qr",
+      bank: bankCode,
+      account_number: accountNumber,
+      total_price: amount,
+      payload,
+      qr_image: qrImage,
+      status: "waiting_payment",
+    };
+  } catch (err) {
+    console.error("Error generating QR:", err);
+    return {
+      success: false,
+      message: err.message || "ไม่สามารถสร้าง QR Code ได้",
+    };
+  }
+}
+
+//เลือกชำระเงิน
+exports.selectPayment = async (req, res) => {
+  try {
+    const { paymentMethod, total_price, customer_paid } = req.body;
+
+    if (!paymentMethod || !total_price) {
+      return res
+        .status(400)
+        .json({ message: "กรุณาระบุช่องทางชำระเงินและยอดรวม" });
+    }
+
+    if (paymentMethod === "cash") {
+      const result = calculateCash(total_price, customer_paid);
+      return res.json(result);
+    }
+    if (paymentMethod === "qr") {
+      // สร้าง QR Code
+      const qr = await generateQrPayment(total_price);
+      return res.json(qr);
+    }
+
+    res.status(400).json({ message: "ช่องทางชำระเงินไม่ถูกต้อง" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

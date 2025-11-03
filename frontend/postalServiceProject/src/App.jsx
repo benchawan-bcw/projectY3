@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Outlet } from "react-router-dom";
 import { Navigate } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 import "./App.css";
 
@@ -9,6 +10,7 @@ import Dashboard from "./components/Admin/pages/Dashboard.jsx";
 import Receipt from "./components/Admin/pages/Receipt.jsx";
 import RegisterParcel from "./components/Admin/pages/RegisterParcel.jsx";
 import ParcelReport from "./components/Admin/pages/ParcelReport.jsx";
+import Payment from "./components/Admin/pages/Payment.jsx";
 
 // User pages
 import UserLayout from "./components/User/UserLayout.jsx";
@@ -27,6 +29,7 @@ function App() {
           <Route path="Receipt" element={<Receipt />} />
           <Route path="RegisterParcel" element={<RegisterParcel />} />
           <Route path="ParcelReport" element={<ParcelReport />} />
+          <Route path="Payment" element={<Payment />} />
         </Route>
 
         {/* User routes */}

@@ -1,31 +1,81 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import LongdoAddressIframe from "../components/LongdoAddressIframe";
+import { Dropdown, DropdownButton } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 const RegisterParcel = () => {
+  const navigate = useNavigate();
+  const goToPayment = () => {
+    navigate("/admin/Payment");
+  };
+
   const [trackingNumber, setTrackingNumber] = useState("");
   const [sender, setSender] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
   const [receiver, setReceiver] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
-
-  const [houseNumber, setHouseNumber] = useState("");
-  const [village, setVillage] = useState("");
-  const [soi, setSoi] = useState("");
-  const [road, setRoad] = useState("");
+  const [addressData, setAddressData] = useState({});
 
   const [weight, setWeight] = useState(0);
-  const [equipment, setEquipment] = useState([]); // array of { name, price }
-  const [totalEquipment, setTotalEquipment] = useState(0);
   const [serviceType] = useState("EMS");
   const [shippingCost, setShippingCost] = useState(0);
+
+  const [boxes, setBoxes] = useState([]);
+  const [envelopes, setEnvelopes] = useState([]);
+  const [ties, setTies] = useState([]);
+  const [bubble_wrap, setBubble_wrap] = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [selectedEquipment, setSelectedEquipment] = useState([]);
+  const [totalEquipment, setTotalEquipment] = useState(0);
+
   const [totalPrice, setTotalPrice] = useState(0);
   const [netPrice, setNetPrice] = useState(0);
 
-  const [addressData, setAddressData] = useState({});
-
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // ค่าส่ง
+  const handleCalculateShipping = async () => {
+    if (!weight || !addressData.postal_code) {
+      setMessage("กรุณากรอกน้ำหนักและรหัสไปรษณีย์ก่อนคำนวณค่าส่ง");
+      return;
+    }
+
+    try {
+      const packagingCost = totalEquipment || 0;
+      const res = await axios.post(
+        "http://localhost:4000/admin-ban-poolsub/calculateEms",
+        {
+          weight,
+          postcode: addressData.postal_code,
+          packagingCost,
+        },
+        {
+          auth: {
+            username: "admin",
+            password: "bands",
+          },
+        }
+      );
+
+      if (res.data.success) {
+        setShippingCost(res.data.totalCost);
+        recalcPrice();
+        setShippingCost({
+          total: res.data.totalCost,
+          isIsland: res.data.isIsland,
+          postcode: res.data.postcode,
+        });
+      } else {
+        setEmsResult(null);
+        setMessage("ไม่สามารถคำนวณค่าส่งได้");
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("เกิดข้อผิดพลาดในการคำนวณค่าส่ง");
+    }
+  };
 
   // อัปเดตค่า totalEquipment / totalPrice / netPrice อัตโนมัติ
   const recalcPrice = () => {
@@ -35,9 +85,66 @@ const RegisterParcel = () => {
     setNetPrice(totalPrice); // ถ้าไม่มีอะไรซับซ้อน
   };
 
-  const handleAddEquipment = (name, price) => {
-    setEquipment((prev) => [...prev, { name, price }]);
+  // อุปกร
+  useEffect(() => {
+    axios
+      .get("http://localhost:4000/admin-ban-poolsub/equipment", {
+        auth: {
+          username: "admin",
+          password: "bands",
+        },
+      })
+      .then((res) => {
+        setBoxes(res.data.boxes || []);
+        setEnvelopes(res.data.envelopes || []);
+        setTies(res.data.ties || []);
+        setBubble_wrap(res.data.bubble_wrap || []);
+      })
+      .catch((err) => console.error("ไม่สามารถโหลดข้อมูลอุปกรณ์:", err));
+  }, []);
+
+  if (!equipment) return <p>กำลังโหลดอุปกรณ์...</p>;
+
+  const handleAddItem = (category, item) => {
+    setSelectedEquipment((prev) => [...prev, item]);
+
+    const total = [...selectedEquipment, item].reduce(
+      (sum, i) => sum + i.price,
+      0
+    );
+    setTotalEquipment(total);
   };
+
+  // ฟังก์ชันลบอุปกรณ์
+  const handleRemoveItem = (index) => {
+    setSelectedEquipment((prev) => {
+      const updated = prev.filter((_, i) => i !== index); // ลบตัวที่กด
+      const total = updated.reduce((sum, item) => sum + item.price, 0);
+      setTotalEquipment(total); // คำนวณราคารวมใหม่
+      return updated;
+    });
+  };
+
+  const DropdownCategory = ({ categoryName, categoryData, categoryKey }) => (
+    <Dropdown className="mb-2">
+      <Dropdown.Toggle variant="secondary">{categoryName}</Dropdown.Toggle>
+      <Dropdown.Menu>
+        {categoryData.map((item, idx) => {
+          const names = Array.isArray(item.name) ? item.name : [item.name];
+          return names.map((name) => (
+            <Dropdown.Item
+              key={categoryKey + idx + name}
+              onClick={() =>
+                handleAddItem(categoryKey, { name, price: item.price })
+              }
+            >
+              {name} ({item.price} บาท)
+            </Dropdown.Item>
+          ));
+        })}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,6 +180,19 @@ const RegisterParcel = () => {
         .filter((item) => item) // ลบค่าว่าง
         .join(" "); // ต่อด้วย space แทน \n
 
+      // คำนวณราคารวมอุปกรณ์
+      const totalEquipmentPrice = equipment.reduce(
+        (sum, item) => sum + (item.price || 0),
+        0
+      );
+
+      // คำนวณราคารวมทั้งหมด (รวมค่าส่ง)
+      const shippingCostNumber =
+        typeof shippingCost === "number"
+          ? shippingCost
+          : shippingCost.total || 0;
+      const totalPriceNumber = totalEquipmentPrice + shippingCostNumber;
+
       console.log("📦 ข้อมูลที่จะส่ง:", {
         tracking_number: trackingNumber,
         sender,
@@ -81,7 +201,7 @@ const RegisterParcel = () => {
         receiver_phone: receiverPhone,
         address: fullAddress,
         weight,
-        equipment,
+        equipment: selectedEquipment,
         total_equipment: totalEquipment,
         service_type: serviceType,
         shipping_cost: shippingCost,
@@ -99,7 +219,7 @@ const RegisterParcel = () => {
           receiver_phone: receiverPhone,
           address: fullAddress,
           weight,
-          equipment,
+          equipment: selectedEquipment,
           total_equipment: totalEquipment,
           service_type: serviceType,
           shipping_cost: shippingCost,
@@ -123,7 +243,7 @@ const RegisterParcel = () => {
       setReceiver("");
       setReceiverPhone("");
       setWeight(0);
-      setEquipment([]);
+      setSelectedEquipment([]);
       setTotalEquipment(0);
       setShippingCost(0);
       setTotalPrice(0);
@@ -154,6 +274,7 @@ const RegisterParcel = () => {
           />
         </div>
 
+        {/* ผู้ส่ง */}
         <div className="flex gap-4 w-full">
           <div className="flex-1 min-w-0 flex flex-col">
             <label>ชื่อผู้ส่ง :</label>
@@ -175,6 +296,7 @@ const RegisterParcel = () => {
           </div>
         </div>
 
+        {/* ผู้รับ */}
         <div className="flex gap-4 w-full">
           <div className="flex-1 flex flex-col">
             <label>ชื่อผู้รับ :</label>
@@ -197,10 +319,12 @@ const RegisterParcel = () => {
           </div>
         </div>
 
+        {/* กรอกข้อมูลที่อยู่ */}
         <div>
           <LongdoAddressIframe onChange={setAddressData} />
         </div>
 
+        {/* น้ำหนัก + ค่าส่ง */}
         <div className="flex gap-4 w-full">
           <div className="flex-1 flex flex-col">
             <label>น้ำหนักพัสดุ (g) :</label>
@@ -211,41 +335,73 @@ const RegisterParcel = () => {
               className="w-full border p-2 rounded"
             />
           </div>
-          <div className="flex-1 flex flex-col">
-            <label>ค่าส่ง :</label>
-            <input
-              type="number"
-              placeholder="ค่าส่ง (บาท)"
-              value={shippingCost}
-              onChange={(e) => {
-                setShippingCost(Number(e.target.value));
-                recalcPrice();
-              }}
-              className="w-full border p-2 rounded"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={handleCalculateShipping}
+            className="mt-2 bg-green-500 text-black rounded p-1"
+          >
+            คำนวณค่าส่ง EMS
+          </button>
+          {shippingCost && (
+            <div className="mt-2 bg-gray-100 p-2 rounded border text-sm">
+              {shippingCost.isIsland && <p>พื้นที่เกาะ (+15 บาท)</p>}
+              <p>ค่าส่ง EMS: {shippingCost.total} บาท</p>
+            </div>
+          )}
         </div>
 
+        {/* เพิ่มอุปกร  */}
         <div className="flex gap-4 w-full">
-          <div className="flex-1 flex flex-col">
-            <label className="font-semibold">อุปกรณ์ (เพิ่มได้หลายชิ้น):</label>
-            <button
-              type="button"
-              onClick={() => handleAddEquipment("กล่อง", 20)}
-            >
-              เพิ่มกล่อง 20 บาท
-            </button>
-            <button type="button" onClick={() => handleAddEquipment("เทป", 5)}>
-              เพิ่มเทป 5 บาท
-            </button>
-            <pre>{JSON.stringify(equipment, null, 2)}</pre>
+          <h2>เลือกอุปกรณ์</h2>
+
+          <DropdownCategory
+            categoryName="กล่อง"
+            categoryData={boxes}
+            categoryKey="boxes"
+          />
+          <DropdownCategory
+            categoryName="ซอง"
+            categoryData={envelopes}
+            categoryKey="envelopes"
+          />
+          <DropdownCategory
+            categoryName="รัดกล่อง"
+            categoryData={ties}
+            categoryKey="ties"
+          />
+          <DropdownCategory
+            categoryName="บับเบิ้ล"
+            categoryData={bubble_wrap}
+            categoryKey="bubble_wrap"
+          />
+
+          <div className="border p-3 rounded mt-3">
+            <h3>อุปกรณ์ที่เลือก:</h3>
+            {selectedEquipment.length === 0 ? (
+              <p>ยังไม่ได้เลือกอุปกรณ์</p>
+            ) : (
+              <ul>
+                {selectedEquipment.map((item, idx) => (
+                  <li key={idx} className="flex justify-between items-center">
+                    {item.name} ({item.price} บาท)
+                    <button
+                      className="ml-2 text-red-500"
+                      onClick={() => handleRemoveItem(idx)}
+                    >
+                      ลบ
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p>ราคารวมอุปกรณ์: {totalEquipment} บาท</p>
           </div>
 
-          <div className="flex-1 flex flex-col">
+          {/* <div className="flex-1 flex flex-col">
             <p>ค่าอุปกรณ์: {totalEquipment} บาท</p>
             <p>รวมค่าส่ง + อุปกรณ์: {totalPrice} บาท</p>
             <p>ราคาสุทธิ: {netPrice} บาท</p>
-          </div>
+          </div> */}
         </div>
 
         <button
@@ -258,6 +414,13 @@ const RegisterParcel = () => {
 
         {message && <p className="mt-3 text-center">{message}</p>}
       </form>
+
+      <button
+        className="w-full bg-blue-500 text-black p-2 rounded"
+        onClick={goToPayment}
+      >
+        ไปหน้าใบเสร็จชำระเงิน
+      </button>
     </div>
   );
 };
