@@ -219,7 +219,7 @@ function calculateCash(total_price, customer_paid) {
 //ฟังก์ชันชำระเงินโอนผ่าน QR Code
 async function generateQrPayment(amount) {
   try {
-    const accountNumber = process.env.PROMPTPAY_ACCOUNT;
+    const accountNumber = process.env.ACCOUNTUMBER;
     const bankCode = process.env.BANK_CODE || "GSB";
 
     if (!accountNumber) throw new Error("ไม่พบหมายเลขพร้อมเพย์ในไฟล์ .env");
@@ -272,5 +272,47 @@ exports.selectPayment = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.updatePayment = async (req, res) => {
+  try {
+    const { total_price, net_price } = req.body;
+
+    const latestParcel = await Parcels.findOne().sort({ update_at: -1 });
+    if (!latestParcel) {
+      return res.status(404).json({ message: "ไม่พบพัสดุในระบบ" });
+    }
+
+    // อัปเดตข้อมูลในฐานข้อมูล
+    const updatedParcel = await Parcels.findOneAndUpdate(
+      { tracking_number: latestParcel.tracking_number },
+      {
+        $set: {
+          total_price,
+          net_price,
+          payment_method,
+          payment_status: "ชำระเงินเรียบร้อย",
+          update_at: new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedParcel) {
+      return res
+        .status(404)
+        .json({ message: "ไม่พบข้อมูลพัสดุที่ต้องการอัปเดต" });
+    }
+
+    res.status(200).json({
+      message: "อัปเดตข้อมูลการชำระเงินสำเร็จ",
+      parcel: updatedParcel,
+    });
+  } catch (err) {
+    console.error("เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน:", err);
+    res
+      .status(500)
+      .json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์", error: err.message });
   }
 };

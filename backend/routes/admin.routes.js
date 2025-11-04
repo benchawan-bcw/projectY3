@@ -10,6 +10,7 @@ const {
   calculateEms,
   equipment,
   selectPayment,
+  updatePayment,
 } = require("../controllers/adminController");
 
 //middleware
@@ -22,5 +23,6 @@ router.get("/getParcels", getParcels);
 router.post("/calculateEms", calculateEms);
 router.get("/equipment", equipment);
 router.post("/selectPayment", selectPayment);
+router.put("/updatePayment", updatePayment);
 
 module.exports = router;

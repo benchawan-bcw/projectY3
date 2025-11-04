@@ -2,12 +2,15 @@ import React, { useState, useRef } from "react";
 import axios from "axios";
 
 const Receipt = () => {
-  // const [receiverName, setReceiverName] = useState("");
   const [senderName, setSenderName] = useState("");
   const [parcels, setParcels] = useState([]);
   const receiptRef = useRef();
+  const receiptNumber = `BILL-${Date.now().toString().slice(-4)}`;
   const today = new Date().toLocaleDateString("th-TH");
-const time = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date().toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const fetchParcel = async () => {
     if (!senderName) return;
@@ -40,6 +43,22 @@ const time = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "
       alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
       setParcels([]);
     }
+  };
+
+  const shippingCost = parcels?.shipping_cost || 0;
+
+  const extractAddressData = (address) => {
+    if (!address) return { province: "-", zipcode: "-" };
+
+    // ดึงรหัสไปรษณีย์
+    const zipMatch = address.match(/\d{5}$/);
+    const zipcode = zipMatch ? zipMatch[0] : "-";
+
+    // ดึงชื่อจังหวัด
+    const provinceMatch = address.match(/(?:จังหวัด|จ\.)\s*([ก-ฮ]{2,})/);
+    const province = provinceMatch ? provinceMatch[1] : "-";
+
+    return { province, zipcode };
   };
 
   const handlePrint = () => {
@@ -120,24 +139,32 @@ const time = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "
 
     //แสดงชื่อผู้รับของผู้ส่งนั้น ๆ ทั้งหมด
     parcels.forEach((p, i) => {
+      const { province, zipcode } = extractAddressData(p.address);
+
       printWindow.document.write(`
     <div class="receipt">
-        <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
-        <p><b>ที่อยู่:</b> ${p.zipcode || "-"} ${p.province || ""}</p>
-        <p><b>น้ำหนัก:</b> ${p.weight || "-"} กก.</p>
-        <p><b>กล่อง / ซอง:</b> ${p.total_equipment || "-"}</p>
-      </div>
+    <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
+    <p><b>รหัสไปรษณีย์:</b> ${zipcode || "-"} ${province || "-"}</p>
+    <p><b>กล่อง / ซอง:</b> ${p.total_equipment || "-"}</p>
+    <p><b>รัดกล่อง:</b> ${p.total_equipment || "-"}</p>
+    <p><b>น้ำหนัก:</b> ${p.weight || "-"} kg ${p.tracking_number || "-"}</p>
+    <p><b>EMS:</b> ${p.shipping_cost || 0}.-</p>
+    <p><b>กล่อง:</b> ${
+      p.equipment && p.equipment.length > 0
+        ? p.equipment
+            .map((e) => `${e.name || "-"} ${e.price || 0}.-`)
+            .join(", ")
+        : "-"
+    }</p>
 
-      <div class="right-info">
-        ${p.province || "-"}<br/>
-        ${p.total_equipment || "-"}<br/>
-        ${p.tracking_number || "-"}<br/>
-        EMS: ${shippingCost} .-<br/>
-        รวม: ${totalPrice} .-<br/>
-        ชำระ: ${customerPaid} .-<br/>
-        เงินทอน: ${change} .-
-      </div>
-      <div class="line"></div>
+   <div >--------------------------------</div>
+    <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
+    <p><b>เงินสด / สแกน:</b> ${p.customer_paid || 0}.-</p>
+    <p><b>เงินทอน:</b> ${(p.customer_paid || 0) - (p.total_price || 0)}.-</p>
+    
+   <div class="line"></div>
+   <br>
+  </div>
   `);
     });
 

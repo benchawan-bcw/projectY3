@@ -16,7 +16,9 @@ const ParcelsSchema = new mongoose.Schema({
   total_price: { type: Number, default: 0 }, //รวมค่าส่ง + อุปกรณ์
   net_price: { type: Number, default: 0 }, //ราคาสุทธิ (ใช้พิมพ์ใบเสร็จ)
   receipt_number: { type: String, default: null }, // หมายเลขใบเสร็จ
-  status: { type: String, default: "อยู่ที่ร้านรับฝากส่ง" },
+  parcel_status: { type: String, default: "อยู่ที่ร้านรับฝากส่ง" },
+  payment_status: { type: String, default: "ยังไม่ชําระเงิน" },
+  payment_method: { type: String, default: null },
   update_at: { type: Date, default: Date.now },
 });
 
