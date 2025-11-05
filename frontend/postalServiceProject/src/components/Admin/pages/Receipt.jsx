@@ -158,9 +158,24 @@ const Receipt = () => {
     }</p>
 
    <div >--------------------------------</div>
-    <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
-    <p><b>เงินสด / สแกน:</b> ${p.customer_paid || 0}.-</p>
-    <p><b>เงินทอน:</b> ${(p.customer_paid || 0) - (p.total_price || 0)}.-</p>
+   ${
+     p.payment_method === "cash"
+       ? `
+      <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
+      <p><b>เงินสด:</b> ${p.customer_paid || 0}.-</p>
+      <p><b>เงินทอน:</b> ${(p.customer_paid || 0) - (p.total_price || 0)}.-</p>
+    `
+       : p.payment_method === "qr"
+       ? `
+      <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
+      <p><b>ชำระผ่าน QR:</b> ${p.total_price || 0}.-</p>
+    `
+       : `
+      <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
+      <p><b>ชำระด้วย:</b> -</p>
+    `
+   }
+
     
    <div class="line"></div>
    <br>

@@ -8,6 +8,8 @@ const Payment = () => {
   const [customerPaid, setCustomerPaid] = useState("");
   const [result, setResult] = useState(null);
   const [totalPrice, setTotalPrice] = useState(0);
+  const receiptNumber = `BILL-${Date.now().toString().slice(-4)}`;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -36,6 +38,21 @@ const Payment = () => {
     fetchParcels();
   }, []);
 
+  // ดึงข้อมูลจากพัสดุ
+  const equipment = parcel?.equipment || [];
+  const shippingCost = parcel?.shipping_cost || 0;
+
+  // คำนวณราคารวมอุปกรณ์
+  const totalEquipmentPrice = equipment.reduce(
+    (sum, item) => sum + (item.price || 0),
+    0
+  );
+
+  // คำนวณราคารวมทั้งหมด (รวมค่าส่ง)
+  const shippingCostNumber =
+    typeof shippingCost === "number" ? shippingCost : shippingCost.total || 0;
+  const totalPriceNumber = totalEquipmentPrice + shippingCostNumber;
+
   const handleUpdatePayment = async () => {
     setLoading(true);
     setError(null);
@@ -46,6 +63,10 @@ const Payment = () => {
         {
           total_price: totalPriceNumber,
           net_price: totalPriceNumber,
+          receipt_number: receiptNumber,
+          payment_method: paymentMethod,
+          customer_paid:
+            paymentMethod === "cash" ? Number(customerPaid) : totalPriceNumber,
         },
         {
           auth: { username: "admin", password: "bands" },
@@ -68,21 +89,6 @@ const Payment = () => {
       setLoading(false);
     }
   };
-
-  // ดึงข้อมูลจากพัสดุ
-  const equipment = parcel?.equipment || [];
-  const shippingCost = parcel?.shipping_cost || 0;
-
-  // คำนวณราคารวมอุปกรณ์
-  const totalEquipmentPrice = equipment.reduce(
-    (sum, item) => sum + (item.price || 0),
-    0
-  );
-
-  // คำนวณราคารวมทั้งหมด (รวมค่าส่ง)
-  const shippingCostNumber =
-    typeof shippingCost === "number" ? shippingCost : shippingCost.total || 0;
-  const totalPriceNumber = totalEquipmentPrice + shippingCostNumber;
 
   useEffect(() => {
     const autoGenerateQR = async () => {
@@ -363,7 +369,7 @@ const Payment = () => {
         </label>
       </div>
 
-      {/* 🔹 ช่องกรอกเงินสด */}
+      {/* 🔹 ส่วนการชำระด้วยเงินสด */}
       {paymentMethod === "cash" && (
         <div className="mt-3">
           <label>จำนวนเงินที่ลูกค้าชำระ:</label>
@@ -373,6 +379,37 @@ const Payment = () => {
             onChange={(e) => setCustomerPaid(e.target.value)}
             className="border p-2 rounded w-full"
           />
+
+          {/* ปุ่มคำนวณ */}
+          <button
+            onClick={handlePayment}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-black px-4 py-2 rounded w-full"
+            disabled={loading}
+          >
+            {loading ? "กำลังประมวลผล..." : "คำนวณ"}
+          </button>
+
+          {/* ปุ่มบันทึกข้อมูล */}
+          <button
+            onClick={handleUpdatePayment}
+            className="mt-3 bg-green-600 hover:bg-green-700 text-black px-4 py-2 rounded w-full"
+            disabled={loading}
+          >
+            {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+          </button>
+
+          {/* แสดงผลลัพธ์หลังคำนวณ */}
+          {result && result.success && (
+            <div className="mt-5 border-t pt-3 text-center">
+              <p>💵 ลูกค้าชำระ: {result.customer_paid} บาท</p>
+              <p>💰 เงินทอน: {result.change} บาท</p>
+            </div>
+          )}
+
+          {/* ถ้ามี error */}
+          {result && !result.success && (
+            <p className="text-red-600 mt-3">{result.message}</p>
+          )}
         </div>
       )}
 
@@ -386,39 +423,27 @@ const Payment = () => {
             className="w-56 h-56 mx-auto mt-2 border"
           />
           <p className="mt-2">ยอดชำระ: {totalPriceNumber.toFixed(2)} บาท</p>
-        </div>
-      )}
 
-      {/* 🔹 ปุ่มคำนวน */}
-      {paymentMethod === "cash" && (
-        <button
-          onClick={handlePayment}
-          className="mt-4 bg-blue-600 hover:bg-blue-700 text-black px-4 py-2 rounded w-full"
-          disabled={loading}
-        >
-          {loading ? "กำลังประมวลผล..." : "คำนวน"}
-        </button>
-      )}
+          <button
+            onClick={handlePrint}
+            className="mt-4 bg-purple-600 hover:bg-purple-700 text-black px-4 py-2 rounded w-full"
+          >
+            🖨 พิมพ์ใบเสร็จ
+          </button>
 
-      {/* 🔹 แสดงผลลัพธ์ */}
-      {result && result.success && paymentMethod === "cash" && (
-        <div className="mt-5 border-t pt-3 text-center">
-          <p>💵 ลูกค้าชำระ: {result.customer_paid} บาท</p>
-          <p>💰 เงินทอน: {result.change} บาท</p>
+          <button
+            onClick={handleUpdatePayment}
+            className="mt-3 bg-green-600 hover:bg-green-700 text-black px-4 py-2 rounded w-full"
+            disabled={loading}
+          >
+            {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+          </button>
         </div>
       )}
 
       {result && !result.success && (
         <p className="text-red-600 mt-3">{result.message}</p>
       )}
-
-      <button onClick={handleUpdatePayment} style={{ marginTop: "1rem" }}>
-        บันทึกข้อมูล
-      </button>
-
-      <button onClick={handlePrint} style={{ marginTop: "1rem" }}>
-        🖨 พิมพ์ใบเสร็จ
-      </button>
     </div>
   );
 };

@@ -277,12 +277,15 @@ exports.selectPayment = async (req, res) => {
 
 exports.updatePayment = async (req, res) => {
   try {
-    const { total_price, net_price } = req.body;
+    const { total_price, net_price, payment_method, customer_paid } = req.body;
 
     const latestParcel = await Parcels.findOne().sort({ update_at: -1 });
     if (!latestParcel) {
       return res.status(404).json({ message: "ไม่พบพัสดุในระบบ" });
     }
+
+    const receipt_number =
+      "BILL-" + Math.floor(100000 + Math.random() * 900000).toString();
 
     // อัปเดตข้อมูลในฐานข้อมูล
     const updatedParcel = await Parcels.findOneAndUpdate(
@@ -291,6 +294,8 @@ exports.updatePayment = async (req, res) => {
         $set: {
           total_price,
           net_price,
+          receipt_number,
+          customer_paid,
           payment_method,
           payment_status: "ชำระเงินเรียบร้อย",
           update_at: new Date(),

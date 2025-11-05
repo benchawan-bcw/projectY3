@@ -19,6 +19,7 @@ const ParcelsSchema = new mongoose.Schema({
   parcel_status: { type: String, default: "อยู่ที่ร้านรับฝากส่ง" },
   payment_status: { type: String, default: "ยังไม่ชําระเงิน" },
   payment_method: { type: String, default: null },
+  customer_paid: { type: Number, default: 0 },
   update_at: { type: Date, default: Date.now },
 });
 
