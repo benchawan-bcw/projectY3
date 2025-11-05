@@ -3,12 +3,11 @@ import { Link } from "react-router-dom";
 import { Navbar, Nav, Container } from "react-bootstrap";
 import { useState } from "react";
 
-
 const UserNavbar = () => {
   const [hovered, setHovered] = useState(null);
 
   const navItems = [
-    { to: "/user/Homeuser", label: "หน้าหลัก", icon: "bi-house" },
+    { to: "/user", label: "หน้าหลัก", icon: "bi-house" },
     {
       to: "/user/Tracking",
       label: "ตรวจสอบสถานะพัสดุ",
@@ -43,7 +42,7 @@ const UserNavbar = () => {
                 backgroundColor: hovered === index ? "#FEFBC7" : "transparent",
                 padding: "0.2rem 0.5rem",
                 borderRadius: "8px",
-                width: "100%",
+                width: "20%",
                 textAlign: "center",
               }}
             >

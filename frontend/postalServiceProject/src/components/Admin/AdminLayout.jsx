@@ -5,6 +5,7 @@ const AdminLayout = () => {
   return (
     <div>
       <Navbar />
+      <div style={{ paddingTop: "70px" }}></div>
       <Outlet />
     </div>
   );

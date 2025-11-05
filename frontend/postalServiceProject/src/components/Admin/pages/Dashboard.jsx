@@ -91,20 +91,20 @@ const Dashboard = () => {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div
-      className="space-y-6"
-      style={{ padding: "20px", fontFamily: "sans-serif" }}
-    >
-      <h1 className="text-2xl font-bold">Dashboard Admin</h1>
+    <div className="space-y-6 px-6 py-4 font-sans max-w-[1400px] mx-auto">
+      {/* Header */}
+      <h1 className="text-3xl font-bold text-gray-800 text-center">
+        Dashboard Admin
+      </h1>
 
       {/* เลือกช่วงเวลา */}
       <div
         style={{
           display: "flex",
-          gap: "10px",
-          marginBottom: "20px",
-          alignItems: "center",
+          flexWrap: "nowrap",
           justifyContent: "center",
+          alignItems: "center",
+          marginBottom: "1.5rem",
         }}
       >
         <DatePicker
@@ -114,12 +114,20 @@ const Dashboard = () => {
           dateFormat={periodType === "monthly" ? "MM/yyyy" : "yyyy-MM-dd"}
           showMonthYearPicker={periodType === "monthly"}
           isClearable
+          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 w-48"
+          style={{
+            marginRight: "16px", // ช่องว่างด้านขวา
+          }}
         />
 
         <select
           value={periodType}
           onChange={(e) => setPeriodType(e.target.value)}
-          style={{ padding: "6px" }}
+          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 w-40"
+          style={{
+            marginRight: "16px", // ช่องว่างด้านขวา
+            marginLeft: "16px",
+          }}
         >
           <option value="daily">รายวัน</option>
           <option value="weekly">รายสัปดาห์</option>
@@ -128,13 +136,8 @@ const Dashboard = () => {
 
         <button
           onClick={filterByDate}
-          style={{
-            padding: "6px 12px",
-            backgroundColor: "#d71a28",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-          }}
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded shadow-md transition-colors w-32"
+          style={{ backgroundColor: "#E14434", color: "white" }}
         >
           ค้นหา
         </button>

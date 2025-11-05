@@ -245,43 +245,47 @@ const Payment = () => {
 
   return (
     <div
-    // style={{
-    //   height: "300px",
-    //   overflowY: "scroll",
-    //   scrollbarWidth: "none",
-    //   msOverflowStyle: "none",
-    // }}
+      // style={{
+      //   height: "300px",
+      //   overflowY: "scroll",
+      //   scrollbarWidth: "none",
+      //   msOverflowStyle: "none",
+      // }}
+      className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg space-y-6 font-sans"
     >
       {/* <style>{`div::-webkit-scrollbar { display: none; }`}</style> */}
 
       <h3>ใบเสร็จชำระเงิน</h3>
 
-      <p>รายละเอียดอุปกรณ์</p>
-      {equipment.length > 0 ? (
-        <ul className="border rounded-lg divide-y">
-          {equipment.map((item, index) => (
-            <li
-              key={index}
-              className="flex justify-between p-2 hover:bg-gray-50 transition"
-            >
-              <span>{item.name}</span> : &nbsp;
-              <span>{item.price?.toFixed(2)} บาท</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-500">ไม่มีอุปกรณ์เพิ่มเติม</p>
-      )}
-      <p>ค่าอุปกรณ์ : {totalEquipmentPrice.toFixed(2)} บาท</p>
+      <div className="bg-gray-50 p-4 rounded-lg shadow-inner">
+        <p>รายละเอียดอุปกรณ์</p>
+        {equipment.length > 0 ? (
+          <ul className="border rounded-lg divide-y divide-gray-200 list-none">
+            {equipment.map((item, index) => (
+              <li
+                key={index}
+                className="flex justify-between p-2 hover:bg-gray-50 transition"
+              >
+                <span className="text-left">{item.name}</span>
+                <span className="text-right">{item.price?.toFixed(2)} บาท</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 text-left">ไม่มีอุปกรณ์เพิ่มเติม</p>
+        )}
 
-      <p>ค่าส่ง : {shippingCostNumber.toFixed(2)} บาท</p>
-      <p className="font-bold mt-2 text-lg">
-        รวมทั้งหมด : {totalPriceNumber.toFixed(2)} บาท
-      </p>
+        <p>ค่าอุปกรณ์ : {totalEquipmentPrice.toFixed(2)} บาท</p>
 
-      {/* 🔹 เลือกวิธีชำระ */}
-      <div className="mt-3">
-        <label className="mr-2">
+        <p>ค่าส่ง : {shippingCostNumber.toFixed(2)} บาท</p>
+        <p className="font-bold mt-2 text-lg">
+          รวมทั้งหมด : {totalPriceNumber.toFixed(2)} บาท
+        </p>
+      </div>
+
+      {/* วิธีชำระเงิน */}
+      <div className="flex gap-4 justify-center mt-4">
+        <label className="flex items-center gap-2">
           <input
             type="radio"
             value="cash"
@@ -290,7 +294,7 @@ const Payment = () => {
           />
           เงินสด
         </label>
-        <label className="ml-4">
+        <label className="flex items-center gap-2">
           <input
             type="radio"
             value="qr"

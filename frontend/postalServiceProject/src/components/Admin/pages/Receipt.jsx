@@ -48,6 +48,18 @@ const Receipt = () => {
 
   const shippingCost = parcels?.shipping_cost || 0;
 
+  // ฟังก์ชันช่วยดึงราคาของอุปกรณ์ตามชื่อ
+  function getEquipmentPrice(equipment, keyword) {
+    if (!equipment || equipment.length === 0) return 0;
+
+    // รวมราคาทุกชิ้นที่ชื่อมีคำว่า keyword อยู่
+    const total = equipment
+      .filter((e) => e.name.includes(keyword))
+      .reduce((sum, e) => sum + (e.price || 0) * (e.quantity || 1), 0);
+
+    return total;
+  }
+
   const extractAddressData = (address) => {
     if (!address) return { province: "-", zipcode: "-" };
 
@@ -74,135 +86,174 @@ const Receipt = () => {
     const fontFooter = paperSize === "58mm" ? "4px" : "12px";
 
     printWindow.document.write(`
-<html>
-  <head>
-    <title>ใบเสร็จรับเงินสินค้า</title>
-    <style>
-      body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
-      h3 { font-size: ${fontHeader}; }
-      .footer { font-size: ${fontFooter}; }
+    <html>
+      <head>
+        <title>ใบเสร็จรับเงินสินค้า</title>
+        <style>
+          body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
+          h3 { font-size: ${fontHeader}; }
+          .footer { font-size: ${fontFooter}; }
 
-      @page { size: auto; margin: 0; }
-    
-      .receipt {
-        width: 100%;
-        text-align: left;
-         font-size: 15px;
-      }
-      h3 {
-        text-align: center;
-        margin: 0;
-        padding: 0.5rem 0;
-        font-size: 16px;
-        border-bottom: 1px dashed #000;
-      }
-      .header {
-        text-align: center;
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
-        font-size: 16px;
-      }
-      .bill-number {
-      text-align: center;
-      font-weight: bold;
-      margin: 0.3rem 0;
-      }
-      .receipt {
-        margin: 0.3rem 0;
-      }
-      .receipt p {
-        margin: 0.3rem 0;
-        line-height: 1.1;
-      }
-      .line {
-        border-bottom: 1px dashed #000;
-        margin: 0.1rem 0;
-      }
-      .footer {
-        text-align: center;
-        margin-top: 0.5rem;
-        page-break-after: always; /* 🧾 ตัดกระดาษหลังข้อความนี้ */
-        margin-bottom: 1rem;
-      }
-      .right-info {
-        text-align: right;
-        font-size: 15px;
-        margin-top: 0.5rem;
-        line-height: 1.2;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="receipt">
-      <div class="header">
-        <strong>บ้านไปรษณีย์พูลทรัพย์</strong><br/>
-        โทร. 035-913-183
-      </div>
+          @page { size: auto; margin: 0; }
+        
+          .receipt {
+            width: 100%;
+            text-align: left;
+            font-size: 15px;
+          }
+          h3 {
+            text-align: center;
+            margin: 0;
+            padding: 0.5rem 0;
+            font-size: 16px;
+            border-bottom: 1px dashed #000;
+          }
+          .header {
+            text-align: center;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 16px;
+          }
+          .bill-number {
+          text-align: center;
+          font-weight: bold;
+          margin: 0.3rem 0;
+          }
+          .receipt {
+            margin: 0.3rem 0;
+          }
+          .receipt p {
+            margin: 0.3rem 0;
+            line-height: 1.1;
+          }
+          .line {
+            border-bottom: 1px dashed #000;
+            margin: 0.1rem 0;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 0.5rem;
+            page-break-after: always; /* 🧾 ตัดกระดาษหลังข้อความนี้ */
+            margin-bottom: 1rem;
+          }
+          .right-info {
+            text-align: right;
+            font-size: 15px;
+            margin-top: 0.5rem;
+            line-height: 1.2;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <div class="header">
+            <strong>บ้านไปรษณีย์พูลทรัพย์</strong><br/>
+            โทร. 035-913-183
+          </div>
 
-      <div class="bill-number">
-        <div>ใบรับเงินเลขที่: ${receiptNumber || "BILL-0001"}</div>
-      </div>
-      <div class="section">
-        วันที่: ${today} &nbsp;&nbsp; เวลา: ${time}
-      </div>
-      <div class="line"></div>
-      `);
+          <div class="bill-number">
+            <div>ใบรับเงิน</div>
+          </div>
+          <div class="section">
+          <div>${receiptNumber || "BILL-0001"} (เลขบิล)</div>
+            วันที่: ${today} &nbsp;&nbsp; เวลา: ${time}
+          </div>
+          <div class="line"></div>
+          `);
 
     //แสดงชื่อผู้รับของผู้ส่งนั้น ๆ ทั้งหมด
     parcels.forEach((p, i) => {
       const { province, zipcode } = extractAddressData(p.address);
 
       printWindow.document.write(`
-    <div class="receipt">
-    <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
-    <p>${zipcode || "-"} ${province || "-"}</p>
-    <p><b>กล่อง / ซอง:</b> ${p.total_equipment || "-"}</p>
-    <p><b>รัดกล่อง:</b> ${p.total_equipment || "-"}</p>
-    <p><b>บับเบิ้ล:</b> ${p.total_equipment || "-"}</p>
-     <b>น้ำหนัก:</b> 
-  ${p.weight ? (p.weight / 1000).toFixed(2) + " kg" : "-"}
-  ${p.tracking_number || "-"}
-    <p><b>EMS:</b> ${p.shipping_cost || 0}.-</p>
-    <p><b>กล่อง:</b> ${
-      p.equipment && p.equipment.length > 0
-        ? p.equipment
-            .map((e) => `${e.name || "-"} ${e.price || 0}.-`)
-            .join(", ")
-        : "-"
-    }</p>
+            <div class="receipt">
+            <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
+            <div style="display: flex; justify-content: space-between;">
+              <span>${zipcode || "-"}</span>
+              <span>${province || "-"}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span><b>กล่อง / ซอง:</b></span>
+              <span>${
+                getEquipmentPrice(p.equipment, "กล่อง") ||
+                getEquipmentPrice(p.equipment, "ซอง")
+              }.-</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span><b>รัดกล่อง:</b></span>
+              <span>${getEquipmentPrice(p.equipment, "เชือก") || 0}.-</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span><b>บับเบิ้ล:</b></span>
+              <span>${getEquipmentPrice(p.equipment, "บับเบิ้ล") || 0}.-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span><b>น้ำหนัก:</b> ${
+                p.weight ? (p.weight / 1000).toFixed(2) + " kg" : "-"
+              }</span>
+              <span>${p.tracking_number || "-"}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-right: 5px;">
+              <span><b>EMS:</b></span>
+              <span>${p.shipping_cost || 0}.-</span>
+            </div>
 
-   <div >---------------------</div>
-   ${
-     p.payment_method === "cash"
-       ? `
-      <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
-      <p><b>เงินสด:</b> ${p.customer_paid || 0}.-</p>
-      <p><b>เงินทอน:</b> ${(p.customer_paid || 0) - (p.total_price || 0)}.-</p>
-    `
-       : p.payment_method === "qr"
-       ? `
-      <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
-      <p><b>ชำระผ่าน QR:</b> ${p.total_price || 0}.-</p>
-    `
-       : `
-      <p><b>รวมทั้งสิ้น:</b> ${p.total_price || 0}.-</p>
-      <p><b>ชำระด้วย:</b> -</p>
-    `
-   }
+        <div >---------------------</div>
+          ${
+            p.payment_method === "cash"
+              ? `
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>รวมทั้งสิ้น:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>เงินสด:</b></span>
+                  <span>${p.customer_paid || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>เงินทอน:</b></span>
+                  <span>${
+                    (p.customer_paid || 0) - (p.total_price || 0)
+                  }.-</span>
+                </div>
+              `
+              : p.payment_method === "qr"
+              ? `
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>รวมทั้งสิ้น:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>ชำระผ่าน QR:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+              `
+              : `
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>รวมทั้งสิ้น:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>ชำระด้วย:</b></span>
+                  <span>-</span>
+                </div>
+              `
+          }
 
-   <div class="line"></div>
-   <br>
-  </div>
-  `);
+
+      <div class="line"></div>
+      <br>
+      </div>
+      `);
     });
 
     printWindow.document.write(`
-      <div class="footer">
-        @@@ ขอบคุณที่ใช้บริการค่ะ @@@
-      </div>
-  </body>
-</html>
-`);
+          <div class="footer">
+            @@@ ขอบคุณที่ใช้บริการค่ะ @@@
+          </div>
+      </body>
+    </html>
+    `);
     printWindow.document.close();
 
     printWindow.onload = () => {

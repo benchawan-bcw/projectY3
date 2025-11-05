@@ -274,18 +274,22 @@ const RegisterParcel = () => {
   };
 
   return (
-    <div className="w-full px-8">
-      <h1 className="text-xl font-bold mb-4 text-center">ลงทะเบียนพัสดุใหม่</h1>
-      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-        <div>
-          <label>เลขพัสดุ :</label>
+    <div className="w-full max-w-5xl mx-auto px-6 py-8">
+      <h1 className="text-2xl font-bold mb-6 text-center text-red-600">
+        ลงทะเบียนพัสดุใหม่
+      </h1>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* เลขพัสดุ */}
+        <div className="flex flex-col">
+          <label className="font-medium mb-1">เลขพัสดุ :</label>
           <input
             type="text"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
             onKeyDown={handleScan}
             placeholder="แสกนหรือพิมพ์เลขพัสดุ"
-            className="w-full border p-2 rounded"
+            className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
           />
         </div>
 
@@ -349,7 +353,6 @@ const RegisterParcel = () => {
               onChange={(e) => setWeight(Number(e.target.value) || 0)}
               className="w-full border p-2 rounded"
             />
-            
           </div>
           <button
             type="button"
