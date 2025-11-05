@@ -8,11 +8,11 @@ const ipCheck = (req, res, next) => {
     clientIP = clientIP.replace("::ffff:", "");
   }
   console.log("Client IP trying to access:", clientIP);
-  
+
   // ตรวจสอบ IP
   const isAdminIP = adminWhitelist.includes(clientIP);
-  const isAdminRoute = req.originalUrl.startsWith("/admin");
-  const isUserRoute = req.originalUrl.startsWith("/user");
+  const isAdminRoute = req.originalUrl.startsWith("/admin-ban-poolsub");
+  const isUserRoute = req.originalUrl.startsWith("/customer-ban-poolsub");
 
   if (isAdminIP && isAdminRoute) {
     return next();
