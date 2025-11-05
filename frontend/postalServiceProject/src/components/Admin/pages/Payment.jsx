@@ -207,7 +207,7 @@ const Payment = () => {
           width: 150px;
           height: 150px;
           margin-top: 0.5rem;
-          margin-buttom: 0.5rem;
+          margin-buttom: 2rem;
         }
       </style>
     </head>
