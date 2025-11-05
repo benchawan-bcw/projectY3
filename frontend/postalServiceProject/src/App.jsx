@@ -15,12 +15,12 @@ import Payment from "./components/Admin/pages/Payment.jsx";
 // User pages
 import UserLayout from "./components/User/UserLayout.jsx";
 import Tracking from "./components/User/pages/Tracking.jsx";
+import Homeuser from "./components/User/pages/HomeUser.jsx";
 
 function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* Root redirect ไป admin dashboard */}
         <Route path="/" element={<Navigate to="/user" />} />
 
         {/* Admin routes */}
@@ -34,6 +34,7 @@ function App() {
 
         {/* User routes */}
         <Route path="/user" element={<UserLayout />}>
+          <Route index element={<Homeuser />} />
           <Route path="Tracking" element={<Tracking />} />
         </Route>
       </Routes>

@@ -1,1 +1,9 @@
-// กรอกชื่อผู้ส่ง มั้ย 
+const Homeuser = () => {
+  return (
+    <div>
+      <h3>home</h3>
+    </div>
+  );
+};
+
+export default Homeuser;

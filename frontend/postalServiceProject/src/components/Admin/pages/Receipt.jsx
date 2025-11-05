@@ -69,25 +69,21 @@ const Receipt = () => {
     }
     const printWindow = window.open("", "_blank");
 
-    const fontBase = paperSize === "58mm" ? "9px" : "13px";
-    const fontHeader = paperSize === "58mm" ? "10px" : "17px";
-    const fontFooter = paperSize === "58mm" ? "8px" : "12px";
+    const fontBase = paperSize === "58mm" ? "6px" : "13px";
+    const fontHeader = paperSize === "58mm" ? "7px" : "17px";
+    const fontFooter = paperSize === "58mm" ? "4px" : "12px";
 
     printWindow.document.write(`
 <html>
   <head>
     <title>ใบเสร็จรับเงินสินค้า</title>
     <style>
-      body { font-family: 'TH SarabunPSK', sans-serif; font-size: ${fontBase}; }
+      body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
       h3 { font-size: ${fontHeader}; }
       .footer { font-size: ${fontFooter}; }
 
       @page { size: auto; margin: 0; }
-      body {
-        font-family: 'TH SarabunPSK', sans-serif;
-        padding: 0.5rem 1rem;
-        line-height: 1.4;
-      }
+    
       .receipt {
         width: 100%;
         text-align: left;
@@ -110,21 +106,24 @@ const Receipt = () => {
       font-weight: bold;
       margin: 0.3rem 0;
       }
-      .section {
-        margin: 0.5rem 0;
+      .receipt {
+        margin: 0.3rem 0;
+      }
+      .receipt p {
+        margin: 0.3rem 0;
+        line-height: 1.1;
       }
       .line {
         border-bottom: 1px dashed #000;
-        margin: 0.5rem 0;
+        margin: 0.1rem 0;
       }
       .footer {
         text-align: center;
-        margin-top: 1.2rem;
-        font-size: 13px;
+        margin-top: 0.5rem;
         page-break-after: always; /* 🧾 ตัดกระดาษหลังข้อความนี้ */
         margin-bottom: 1rem;
       }
-        .right-info {
+      .right-info {
         text-align: right;
         font-size: 13px;
         margin-top: 0.5rem;
@@ -158,7 +157,9 @@ const Receipt = () => {
     <p><b>รหัสไปรษณีย์:</b> ${zipcode || "-"} ${province || "-"}</p>
     <p><b>กล่อง / ซอง:</b> ${p.total_equipment || "-"}</p>
     <p><b>รัดกล่อง:</b> ${p.total_equipment || "-"}</p>
-    <p><b>น้ำหนัก:</b> ${p.weight || "-"} kg ${p.tracking_number || "-"}</p>
+     <b>น้ำหนัก:</b>
+  ${p.weight ? (p.weight / 1000).toFixed(2) + " กก." : "-"}
+  ${p.tracking_number || "-"}
     <p><b>EMS:</b> ${p.shipping_cost || 0}.-</p>
     <p><b>กล่อง:</b> ${
       p.equipment && p.equipment.length > 0

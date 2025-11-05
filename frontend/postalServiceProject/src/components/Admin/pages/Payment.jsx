@@ -156,9 +156,9 @@ const Payment = () => {
       return;
     }
 
-    const fontBase = paperSize === "58mm" ? "9px" : "13px";
-    const fontHeader = paperSize === "58mm" ? "10px" : "17px";
-    const fontFooter = paperSize === "58mm" ? "8px" : "12px";
+    const fontBase = paperSize === "58mm" ? "6px" : "13px";
+    const fontHeader = paperSize === "58mm" ? "7px" : "17px";
+    const fontFooter = paperSize === "58mm" ? "4px" : "12px";
 
     const today = new Date().toLocaleDateString("th-TH");
     const time = new Date().toLocaleTimeString("th-TH");
@@ -179,9 +179,11 @@ const Payment = () => {
       <title>ใบเสร็จรับเงินสินค้า</title>
       <style>
         @page { size: auto; margin: 0; }
-        body { font-family: 'TH SarabunPSK', sans-serif; font-size: ${fontBase}; }
+        body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
         h3 { font-size: ${fontHeader}; }
-        .footer { font-size: ${fontFooter}; }
+        .footer { font-size: ${fontFooter}; 
+        line-height: 1.1; 
+        }
 
         .receipt { width: 100%; text-align: left; }
         h3 {
@@ -201,14 +203,18 @@ const Payment = () => {
           font-weight: bold;
           margin: 0.3rem 0;
         }
-        .section { margin: 0.5rem 0; }
+        .section { margin: 0.1rem 0; }
+        .section p {
+          margin: 0.1rem 0;
+          line-height: 1.1;
+        }
         .line {
           border-bottom: 1px dashed #000;
           margin: 0.5rem 0;
         }
         .footer {
           text-align: center;
-          margin-top: 1.2rem;
+          margin-top: 0.5rem;
           font-size: 16px;
           margin-bottom: 1rem;
         }
@@ -218,6 +224,10 @@ const Payment = () => {
           margin-top: 0.5rem;
           line-height: 1.2;
         }
+        .right-info p {
+          margin: 0.1rem 0;
+          line-height: 1.1;
+        }
         .qr {
           text-align: center;
           margin-top: 1rem;
@@ -225,60 +235,15 @@ const Payment = () => {
         .qr img {
           width: 150px;
           height: 150px;
+          margin-top: 0.5rem;
+          margin-buttom: 0.5rem;
         }
       </style>
     </head>
-    <body>
-      <div class="receipt">
-        <div class="header">
-          <strong>บ้านไปรษณีย์พูลทรัพย์</strong><br/>
-          โทร. 035-913-183
-        </div>
-
-        <div class="bill-number">
-          ใบรับเงินเลขที่: ${receiptNumber}
-        </div>
-        <div class="section">
-          วันที่: ${today} &nbsp;&nbsp; เวลา: ${time}
-        </div>
-        <div class="line"></div>
-
-        <div class="section">
-          <p><b>ชื่อผู้ส่ง:</b> ${parcel.sender || "-"}</p>
-          <p><b>ชื่อผู้รับ:</b> ${parcel.receiver || "-"}</p>
-          <p><b>EMS:</b> ${parcel.shipping_cost || 0} บาท</p>
-        </div>
-        ${
-          parcel.equipment && parcel.equipment.length > 0
-            ? `<div class="section">
-                <b>อุปกรณ์เพิ่มเติม:</b>
-                <ul>
-                  ${parcel.equipment
-                    .map(
-                      (eq) => `<li>${eq.name || "-"}: ${eq.price || 0} บาท</li>`
-                    )
-                    .join("")}
-                </ul>
-              </div>
-              <div class="line"></div>`
-            : ""
-        }
-
-        <div class="right-info">
-          <p>ค่าอุปกรณ์: ${totalEquipmentPrice} บาท</p>
-          <p><b>ยอดรวมทั้งหมด: ${totalPriceNumber} บาท</b></p>
-          ${
-            paymentMethod === "cash"
-              ? `<p>ชำระเงินสด: ${customerPaid || 0} บาท</p>
-                 <p>เงินทอน: ${change || 0} บาท</p>`
-              : ""
-          }
-        </div>
-
         ${
           paymentMethod === "qr" && result?.qr_image
             ? `<div class="qr">
-                 <p>📱 สแกนเพื่อชำระเงิน</p>
+                 <p>สแกนเพื่อชำระเงิน</p>
                  <img id="qrImage" src="${result.qr_image}" alt="QR Code"/>
                </div>`
             : ""

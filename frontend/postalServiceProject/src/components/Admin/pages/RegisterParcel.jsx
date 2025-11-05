@@ -46,9 +46,6 @@ const RegisterParcel = () => {
       }
 
       console.log("📦 สแกนพัสดุแล้ว:", trackingNumber);
-
-      // ตัวอย่าง: ไปดึงข้อมูลจากฐานข้อมูล หรือเตรียมข้อมูลพัสดุใหม่
-      // หรือจะบันทึกเลขพัสดุชั่วคราวก็ได้
     }
   };
 
@@ -102,7 +99,7 @@ const RegisterParcel = () => {
     setNetPrice(totalPrice); // ถ้าไม่มีอะไรซับซ้อน
   };
 
-  // อุปกร
+  // อุปกรณ์
   useEffect(() => {
     axios
       .get("http://localhost:4000/admin-ban-poolsub/equipment", {
@@ -352,6 +349,7 @@ const RegisterParcel = () => {
               onChange={(e) => setWeight(Number(e.target.value) || 0)}
               className="w-full border p-2 rounded"
             />
+            
           </div>
           <button
             type="button"
