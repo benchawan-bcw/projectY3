@@ -156,7 +156,7 @@ const Payment = () => {
       return;
     }
 
-    const fontBase = paperSize === "58mm" ? "6px" : "13px";
+    const fontBase = paperSize === "58mm" ? "10px" : "13px";
     const fontHeader = paperSize === "58mm" ? "7px" : "17px";
     const fontFooter = paperSize === "58mm" ? "4px" : "12px";
 
@@ -186,47 +186,16 @@ const Payment = () => {
         }
 
         .receipt { width: 100%; text-align: left; }
-        h3 {
-          text-align: center;
-          margin: 0;
-          padding: 0.5rem 0;
-          font-size: 20px;
-          border-bottom: 1px dashed #000;
-        }
-        .header {
-          text-align: center;
-          margin-top: 1rem;
-          margin-bottom: 0.5rem;
-        }
-        .bill-number {
-          text-align: center;
-          font-weight: bold;
-          margin: 0.3rem 0;
-        }
+        
         .section { margin: 0.1rem 0; }
         .section p {
+          font-weight: bold;
           margin: 0.1rem 0;
           line-height: 1.1;
         }
         .line {
           border-bottom: 1px dashed #000;
           margin: 0.5rem 0;
-        }
-        .footer {
-          text-align: center;
-          margin-top: 0.5rem;
-          font-size: 16px;
-          margin-bottom: 1rem;
-        }
-        .right-info {
-          text-align: right;
-          font-size: 14px;
-          margin-top: 0.5rem;
-          line-height: 1.2;
-        }
-        .right-info p {
-          margin: 0.1rem 0;
-          line-height: 1.1;
         }
         .qr {
           text-align: center;
@@ -248,8 +217,6 @@ const Payment = () => {
                </div>`
             : ""
         }
-
-        <div class="footer">@ ขอบคุณที่ใช้บริการค่ะ @</div>
       </div>
     </body>
   </html>

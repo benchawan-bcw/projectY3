@@ -87,19 +87,20 @@ const Receipt = () => {
       .receipt {
         width: 100%;
         text-align: left;
+         font-size: 15px;
       }
       h3 {
         text-align: center;
         margin: 0;
         padding: 0.5rem 0;
-        font-size: 14px;
+        font-size: 16px;
         border-bottom: 1px dashed #000;
       }
       .header {
         text-align: center;
         margin-top: 0.5rem;
         margin-bottom: 0.5rem;
-        font-size: 13px;
+        font-size: 16px;
       }
       .bill-number {
       text-align: center;
@@ -125,7 +126,7 @@ const Receipt = () => {
       }
       .right-info {
         text-align: right;
-        font-size: 13px;
+        font-size: 15px;
         margin-top: 0.5rem;
         line-height: 1.2;
       }
@@ -154,11 +155,12 @@ const Receipt = () => {
       printWindow.document.write(`
     <div class="receipt">
     <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
-    <p><b>รหัสไปรษณีย์:</b> ${zipcode || "-"} ${province || "-"}</p>
+    <p>${zipcode || "-"} ${province || "-"}</p>
     <p><b>กล่อง / ซอง:</b> ${p.total_equipment || "-"}</p>
     <p><b>รัดกล่อง:</b> ${p.total_equipment || "-"}</p>
-     <b>น้ำหนัก:</b>
-  ${p.weight ? (p.weight / 1000).toFixed(2) + " กก." : "-"}
+    p><b>บับเบิ้ล:</b> ${p.total_equipment || "-"}</p>
+     <b>น้ำหนัก:</b> .
+  ${p.weight ? (p.weight / 1000).toFixed(2) + " kg" : "-"}
   ${p.tracking_number || "-"}
     <p><b>EMS:</b> ${p.shipping_cost || 0}.-</p>
     <p><b>กล่อง:</b> ${
