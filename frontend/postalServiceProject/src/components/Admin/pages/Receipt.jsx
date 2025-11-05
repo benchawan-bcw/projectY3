@@ -76,7 +76,7 @@ const Receipt = () => {
       @page { size: auto; margin: 0; }
       body {
         font-family: 'TH SarabunPSK', sans-serif;
-        font-size: 16px;
+        font-size: 12px;
         padding: 0.5rem 1rem;
         line-height: 1.4;
       }
@@ -88,13 +88,14 @@ const Receipt = () => {
         text-align: center;
         margin: 0;
         padding: 0.5rem 0;
-        font-size: 20px;
+        font-size: 14px;
         border-bottom: 1px dashed #000;
       }
       .header {
         text-align: center;
         margin-top: 1rem;
         margin-bottom: 0.5rem;
+        font-size: 13px;
       }
       .bill-number {
       text-align: center;
@@ -111,11 +112,12 @@ const Receipt = () => {
       .footer {
         text-align: center;
         margin-top: 1.2rem;
-        font-size: 16px;
+        font-size: 13px;
+        page-break-after: always; /* 🧾 ตัดกระดาษหลังข้อความนี้ */
       }
         .right-info {
         text-align: right;
-        font-size: 14px;
+        font-size: 13px;
         margin-top: 0.5rem;
         line-height: 1.2;
       }

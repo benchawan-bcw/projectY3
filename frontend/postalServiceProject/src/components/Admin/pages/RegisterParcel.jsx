@@ -35,6 +35,22 @@ const RegisterParcel = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleScan = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      if (!trackingNumber.trim()) {
+        alert("ยังไม่มีเลขพัสดุ");
+        return;
+      }
+
+      console.log("📦 สแกนพัสดุแล้ว:", trackingNumber);
+
+      // ตัวอย่าง: ไปดึงข้อมูลจากฐานข้อมูล หรือเตรียมข้อมูลพัสดุใหม่
+      // หรือจะบันทึกเลขพัสดุชั่วคราวก็ได้
+    }
+  };
+
   // ค่าส่ง
   const handleCalculateShipping = async () => {
     if (!weight || !addressData.postal_code) {
@@ -269,6 +285,7 @@ const RegisterParcel = () => {
             type="text"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
+            onKeyDown={handleScan}
             placeholder="แสกนหรือพิมพ์เลขพัสดุ"
             className="w-full border p-2 rounded"
           />
