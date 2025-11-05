@@ -8,15 +8,33 @@ const ipCheck = (req, res, next) => {
     clientIP = clientIP.replace("::ffff:", "");
   }
   console.log("Client IP trying to access:", clientIP);
+  
   // ตรวจสอบ IP
-  if (whitelist.includes(clientIP)) {
-    next();
-  } else {
-    res.status(403).json({
-      message: "Forbidden: Your IP is not allowed to access this domain.",
+  const isAdminIP = adminWhitelist.includes(clientIP);
+  const isAdminRoute = req.originalUrl.startsWith("/admin");
+  const isUserRoute = req.originalUrl.startsWith("/user");
+
+  if (isAdminIP && isAdminRoute) {
+    return next();
+  }
+
+  // ถ้าเป็น IP แอดมิน แต่พยายามเข้า user → ห้าม
+  if (isAdminIP && isUserRoute) {
+    return res.status(403).json({
+      message: "Forbidden: Admin IP cannot access user pages.",
       yourIP: clientIP,
     });
   }
+
+  // ถ้าไม่ใช่ IP แอดมิน แต่พยายามเข้า admin → ห้าม
+  if (!isAdminIP && isAdminRoute) {
+    return res.status(403).json({
+      message: "Forbidden: You are not allowed to access the admin page.",
+      yourIP: clientIP,
+    });
+  }
+
+  return next();
 };
 
 module.exports = ipCheck;

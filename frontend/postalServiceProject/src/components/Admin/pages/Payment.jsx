@@ -150,11 +150,15 @@ const Payment = () => {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = (paperSize = "58mm") => {
     if (!parcel) {
       alert("ไม่มีข้อมูลพัสดุสำหรับพิมพ์");
       return;
     }
+
+    const fontBase = paperSize === "58mm" ? "9px" : "13px";
+    const fontHeader = paperSize === "58mm" ? "10px" : "17px";
+    const fontFooter = paperSize === "58mm" ? "8px" : "12px";
 
     const today = new Date().toLocaleDateString("th-TH");
     const time = new Date().toLocaleTimeString("th-TH");
@@ -175,12 +179,10 @@ const Payment = () => {
       <title>ใบเสร็จรับเงินสินค้า</title>
       <style>
         @page { size: auto; margin: 0; }
-        body {
-          font-family: 'TH SarabunPSK', sans-serif;
-          font-size: 16px;
-          padding: 0.5rem 1rem;
-          line-height: 1.4;
-        }
+        body { font-family: 'TH SarabunPSK', sans-serif; font-size: ${fontBase}; }
+        h3 { font-size: ${fontHeader}; }
+        .footer { font-size: ${fontFooter}; }
+
         .receipt { width: 100%; text-align: left; }
         h3 {
           text-align: center;
@@ -208,6 +210,7 @@ const Payment = () => {
           text-align: center;
           margin-top: 1.2rem;
           font-size: 16px;
+          margin-bottom: 1rem;
         }
         .right-info {
           text-align: right;
@@ -243,12 +246,8 @@ const Payment = () => {
         <div class="section">
           <p><b>ชื่อผู้ส่ง:</b> ${parcel.sender || "-"}</p>
           <p><b>ชื่อผู้รับ:</b> ${parcel.receiver || "-"}</p>
-          <p><b>ที่อยู่:</b> ${parcel.address || "-"}</p>
-          <p><b>เลขพัสดุ:</b> ${parcel.tracking_number || "-"}</p>
-          <p><b>ค่าส่ง:</b> ${parcel.shipping_cost || 0} บาท</p>
+          <p><b>EMS:</b> ${parcel.shipping_cost || 0} บาท</p>
         </div>
-        <div>---------------------------</div>
-
         ${
           parcel.equipment && parcel.equipment.length > 0
             ? `<div class="section">
@@ -267,7 +266,6 @@ const Payment = () => {
 
         <div class="right-info">
           <p>ค่าอุปกรณ์: ${totalEquipmentPrice} บาท</p>
-          <p>ค่าส่ง: ${shippingCost} บาท</p>
           <p><b>ยอดรวมทั้งหมด: ${totalPriceNumber} บาท</b></p>
           ${
             paymentMethod === "cash"

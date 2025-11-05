@@ -62,17 +62,16 @@ const Receipt = () => {
     return { province, zipcode };
   };
 
-  const handlePrint = () => {
+  const handlePrint = (paperSize = "58mm") => {
     if (parcels.length === 0) {
       alert("ไม่มีข้อมูลสำหรับพิมพ์");
       return;
     }
     const printWindow = window.open("", "_blank");
 
-    const isSmallPaper = window.innerWidth < 600;
-    const fontBase = isSmallPaper ? "11px" : "13px";
-    const fontHeader = isSmallPaper ? "14px" : "17px";
-    const fontFooter = isSmallPaper ? "10px" : "12px";
+    const fontBase = paperSize === "58mm" ? "9px" : "13px";
+    const fontHeader = paperSize === "58mm" ? "10px" : "17px";
+    const fontFooter = paperSize === "58mm" ? "8px" : "12px";
 
     printWindow.document.write(`
 <html>
@@ -102,7 +101,7 @@ const Receipt = () => {
       }
       .header {
         text-align: center;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
         margin-bottom: 0.5rem;
         font-size: 13px;
       }
@@ -123,6 +122,7 @@ const Receipt = () => {
         margin-top: 1.2rem;
         font-size: 13px;
         page-break-after: always; /* 🧾 ตัดกระดาษหลังข้อความนี้ */
+        margin-bottom: 1rem;
       }
         .right-info {
         text-align: right;
@@ -168,7 +168,7 @@ const Receipt = () => {
         : "-"
     }</p>
 
-   <div >--------------------------------</div>
+   <div >---------------------</div>
    ${
      p.payment_method === "cash"
        ? `
