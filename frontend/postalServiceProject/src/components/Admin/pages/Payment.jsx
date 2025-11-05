@@ -187,12 +187,6 @@ const Payment = () => {
 
         .receipt { width: 100%; text-align: left; }
         
-        .section { margin: 0.1rem 0; }
-        .section p {
-          font-weight: bold;
-          margin: 0.1rem 0;
-          line-height: 1.1;
-        }
         .line {
           border-bottom: 1px dashed #000;
           margin: 0.5rem 0;
@@ -200,6 +194,14 @@ const Payment = () => {
         .qr {
           text-align: center;
           margin-top: 1rem;
+        }
+
+        .qr p {
+        margin-bottom: 2rem;
+          font-weight: bold;
+          font-size: 20px;
+          margin: 0.1rem 0;
+          line-height: 1.1;
         }
         .qr img {
           width: 150px;

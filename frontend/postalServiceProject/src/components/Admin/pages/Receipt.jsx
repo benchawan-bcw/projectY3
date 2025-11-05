@@ -158,8 +158,8 @@ const Receipt = () => {
     <p>${zipcode || "-"} ${province || "-"}</p>
     <p><b>กล่อง / ซอง:</b> ${p.total_equipment || "-"}</p>
     <p><b>รัดกล่อง:</b> ${p.total_equipment || "-"}</p>
-    p><b>บับเบิ้ล:</b> ${p.total_equipment || "-"}</p>
-     <b>น้ำหนัก:</b> .
+    <p><b>บับเบิ้ล:</b> ${p.total_equipment || "-"}</p>
+     <b>น้ำหนัก:</b> 
   ${p.weight ? (p.weight / 1000).toFixed(2) + " kg" : "-"}
   ${p.tracking_number || "-"}
     <p><b>EMS:</b> ${p.shipping_cost || 0}.-</p>
