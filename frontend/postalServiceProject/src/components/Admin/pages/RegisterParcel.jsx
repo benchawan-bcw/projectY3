@@ -16,6 +16,7 @@ const RegisterParcel = () => {
   const [receiver, setReceiver] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
   const [addressData, setAddressData] = useState({});
+  const [barcode, setBarcode] = useState("");
 
   const [weight, setWeight] = useState(0);
   const [serviceType] = useState("EMS");

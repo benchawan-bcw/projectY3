@@ -11,6 +11,7 @@ const Receipt = () => {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const [paperSize, setPaperSize] = useState("58");
 
   const fetchParcel = async () => {
     if (!senderName) return;
@@ -68,15 +69,23 @@ const Receipt = () => {
     }
     const printWindow = window.open("", "_blank");
 
+    const isSmallPaper = window.innerWidth < 600;
+    const fontBase = isSmallPaper ? "11px" : "13px";
+    const fontHeader = isSmallPaper ? "14px" : "17px";
+    const fontFooter = isSmallPaper ? "10px" : "12px";
+
     printWindow.document.write(`
 <html>
   <head>
     <title>ใบเสร็จรับเงินสินค้า</title>
     <style>
+      body { font-family: 'TH SarabunPSK', sans-serif; font-size: ${fontBase}; }
+      h3 { font-size: ${fontHeader}; }
+      .footer { font-size: ${fontFooter}; }
+
       @page { size: auto; margin: 0; }
       body {
         font-family: 'TH SarabunPSK', sans-serif;
-        font-size: 12px;
         padding: 0.5rem 1rem;
         line-height: 1.4;
       }
@@ -178,7 +187,6 @@ const Receipt = () => {
     `
    }
 
-    
    <div class="line"></div>
    <br>
   </div>
