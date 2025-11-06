@@ -148,6 +148,38 @@ exports.getParcels = async (req, res) => {
   }
 };
 
+//แก้ไขข้อมูลพัสดุ
+exports.editParcel = async (req, res) => {
+  try {
+    const parcelId = req.params.id;
+    const updatedData = {
+      ...req.body,
+      update_at: new Date(),
+    };
+    const updatedParcel = await Parcels.findOneAndUpdate(
+      { _id: parcelId },
+      updatedData,
+      { new: true }
+    );
+    res.json(updatedParcel);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//ลบข้อมูลพัสดุ
+exports.deleteParcel = async (req, res) => {
+  try {
+    const parcelId = req.params.id;
+    const deletedParcel = await Parcels.findOneAndDelete({ _id: parcelId });
+    res.json(deletedParcel);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 //ตรวจสอบพื้นที่เกาะ
 function checkIsIsland(postcode) {
   return islandData.islands.includes(postcode);
@@ -275,6 +307,7 @@ exports.selectPayment = async (req, res) => {
   }
 };
 
+// อัปเดตข้อมูลการชำระเงิน
 exports.updatePayment = async (req, res) => {
   try {
     const { total_price, net_price, payment_method, customer_paid } = req.body;
@@ -321,5 +354,3 @@ exports.updatePayment = async (req, res) => {
       .json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์", error: err.message });
   }
 };
-
-

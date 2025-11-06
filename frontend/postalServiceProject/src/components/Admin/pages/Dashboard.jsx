@@ -152,7 +152,17 @@ const Dashboard = () => {
       </div>
 
       {/* ตาราง */}
-      <ParcelTable parcels={filteredParcels} />
+      <ParcelTable
+        parcels={filteredParcels}
+        onUpdateSuccess={() => {
+          // reload data หลังอัปเดต
+          axios
+            .get("http://localhost:4000/admin-ban-poolsub/getParcels", {
+              auth: { username: "admin", password: "bands" },
+            })
+            .then((res) => setFilteredParcels(res.data.slice(0, 10)));
+        }}
+      />
     </div>
   );
 };

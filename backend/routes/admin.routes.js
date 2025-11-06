@@ -11,6 +11,8 @@ const {
   equipment,
   selectPayment,
   updatePayment,
+  editParcel,
+  deleteParcel,
 } = require("../controllers/adminController");
 
 //middleware
@@ -24,5 +26,7 @@ router.post("/calculateEms", calculateEms);
 router.get("/equipment", equipment);
 router.post("/selectPayment", selectPayment);
 router.put("/updatePayment", updatePayment);
+router.put("/editParcel/:id", editParcel);
+router.delete("/deleteParcel/:id", deleteParcel);
 
 module.exports = router;

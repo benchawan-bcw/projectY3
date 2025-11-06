@@ -13,10 +13,18 @@ const LongdoAddressIframe = ({ onChange }) => {
 
   return (
     <iframe
-      src="/longdo-form.html"
-      style={{ width: "100%", height: "290px", border: "0" }}
-      title="Longdo Address Form"
-    />
+  src="/longdo-form.html"
+  title="Longdo Address Form"
+  style={{
+    width: "100%",
+    height: "290px",
+    border: "none",
+    outline: "none",
+    borderRadius: "12px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+    overflow: "hidden",
+  }}
+/>
   );
 };
 

@@ -274,15 +274,49 @@ const RegisterParcel = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold mb-6 text-center text-red-600">
+    <div
+      style={{
+        width: "500px",
+        margin: "0 auto",
+        padding: "24px",
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+        fontFamily: "sans-serif",
+      }}
+    >
+      <h1
+        style={{
+          fontSize: "24px",
+          fontWeight: "bold",
+          marginBottom: "24px",
+          textAlign: "center",
+          color: "#dc2626",
+        }}
+      >
         ลงทะเบียนพัสดุใหม่
       </h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+          width: "100%",
+        }}
+      >
         {/* เลขพัสดุ */}
-        <div className="flex flex-col">
-          <label className="font-medium mb-1">เลขพัสดุ :</label>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <label
+            style={{
+              fontWeight: "500",
+              marginBottom: "4px",
+              textAlign: "left",
+            }}
+          >
+            เลขพัสดุ :
+          </label>
           <input
             type="text"
             value={trackingNumber}
@@ -291,49 +325,96 @@ const RegisterParcel = () => {
             placeholder="แสกนหรือพิมพ์เลขพัสดุ"
             className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
           />
+          <button
+            type="button"
+            className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+          >
+            ยกเลิก
+          </button>
         </div>
 
         {/* ผู้ส่ง */}
-        <div className="flex gap-4 w-full">
-          <div className="flex-1 min-w-0 flex flex-col">
-            <label>ชื่อผู้ส่ง :</label>
+        <div
+          style={{
+            display: "flex", // แนวนอนเฉพาะส่วนนี้
+            flexDirection: "row",
+            textAlign: "left",
+            gap: "16px",
+            width: "100%",
+          }}
+        >
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <label
+              style={{
+                fontWeight: "500",
+                textAlign: "left",
+                marginBottom: "4px",
+              }}
+            >
+              ชื่อผู้ส่ง :
+            </label>
             <input
               type="text"
               value={sender}
               onChange={(e) => setSender(e.target.value)}
-              className="w-full border p-2 rounded"
+              className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
-          <div className="flex-1 min-w-0 flex flex-col">
-            <label>เบอร์โทรผู้ส่ง :</label>
+
+          <div className="flex-1 flex flex-col">
+            <label className="font-medium mb-1">เบอร์โทรผู้ส่ง :</label>
             <input
               type="text"
               value={senderPhone}
               onChange={(e) => setSenderPhone(e.target.value)}
-              className="w-full border p-2 rounded"
+              className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
         </div>
 
         {/* ผู้รับ */}
-        <div className="flex gap-4 w-full">
+        <div
+          style={{
+            display: "flex", // แนวนอนเฉพาะส่วนนี้
+            flexDirection: "row",
+            textAlign: "left",
+            gap: "16px",
+            width: "100%",
+          }}
+        >
           <div className="flex-1 flex flex-col">
-            <label>ชื่อผู้รับ :</label>
+            <label
+              style={{
+                fontWeight: "500",
+                textAlign: "left",
+                marginBottom: "4px",
+              }}
+            >
+              ชื่อผู้รับ :
+            </label>
             <input
               type="text"
               value={receiver}
               onChange={(e) => setReceiver(e.target.value)}
-              className="w-full border p-2 rounded"
+              className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
 
           <div className="flex-1 flex flex-col">
-            <label>เบอร์โทรผู้รับ :</label>
+            <label
+              style={{
+                fontWeight: "500",
+                textAlign: "left",
+                marginBottom: "4px",
+              }}
+            >
+              เบอร์โทรผู้รับ :
+            </label>
             <input
               type="text"
               value={receiverPhone}
               onChange={(e) => setReceiverPhone(e.target.value)}
-              className="w-full border p-2 rounded"
+              className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
         </div>
@@ -344,84 +425,149 @@ const RegisterParcel = () => {
         </div>
 
         {/* น้ำหนัก + ค่าส่ง */}
-        <div className="flex gap-4 w-full">
+        <div>
           <div className="flex-1 flex flex-col">
-            <label>น้ำหนักพัสดุ (g) :</label>
+            <label
+              style={{
+                fontWeight: "500",
+                textAlign: "left",
+                marginBottom: "4px",
+              }}
+            >
+              น้ำหนักพัสดุ (g) :
+            </label>
             <input
               type="number"
               value={weight}
               onChange={(e) => setWeight(Number(e.target.value) || 0)}
-              className="w-full border p-2 rounded"
+              className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
-          <button
-            type="button"
-            onClick={handleCalculateShipping}
-            className="mt-2 bg-green-500 text-black rounded p-1"
+
+          <div
+            style={{
+              display: "flex", // แนวนอนเฉพาะส่วนนี้
+              flexDirection: "row",
+              textAlign: "left",
+              gap: "16px",
+              width: "100%",
+            }}
           >
-            คำนวณค่าส่ง EMS
-          </button>
-          {shippingCost && (
-            <div className="mt-2 bg-gray-100 p-2 rounded border text-sm">
-              {shippingCost.isIsland && <p>พื้นที่เกาะ (+15 บาท)</p>}
-              <p>ค่าส่ง EMS: {shippingCost.total} บาท</p>
-            </div>
-          )}
-        </div>
-
-        {/* เพิ่มอุปกร  */}
-        <div className="flex gap-4 w-full">
-          <h2>เลือกอุปกรณ์</h2>
-
-          <DropdownCategory
-            categoryName="กล่อง"
-            categoryData={boxes}
-            categoryKey="boxes"
-          />
-          <DropdownCategory
-            categoryName="ซอง"
-            categoryData={envelopes}
-            categoryKey="envelopes"
-          />
-          <DropdownCategory
-            categoryName="รัดกล่อง"
-            categoryData={ties}
-            categoryKey="ties"
-          />
-          <DropdownCategory
-            categoryName="บับเบิ้ล"
-            categoryData={bubble_wrap}
-            categoryKey="bubble_wrap"
-          />
-
-          <div className="border p-3 rounded mt-3">
-            <h3>อุปกรณ์ที่เลือก:</h3>
-            {selectedEquipment.length === 0 ? (
-              <p>ยังไม่ได้เลือกอุปกรณ์</p>
-            ) : (
-              <ul>
-                {selectedEquipment.map((item, idx) => (
-                  <li key={idx} className="flex justify-between items-center">
-                    {item.name} ({item.price} บาท)
-                    <button
-                      className="ml-2 text-red-500"
-                      onClick={() => handleRemoveItem(idx)}
-                    >
-                      ลบ
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <button
+              type="button"
+              onClick={handleCalculateShipping}
+              style={{
+                backgroundColor: "#22c55e", // เขียวสด
+                color: "black",
+                border: "none",
+                borderRadius: "20px", // โค้งมากขึ้น
+                padding: "6px 12px", // ปุ่มเล็กลง
+                fontSize: "14px",
+                cursor: "pointer",
+                flex: 1, // ทำให้ปุ่มกว้างเต็มพื้นที่ที่มี
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => (e.target.style.backgroundColor = "#16a34a")}
+              onMouseOut={(e) => (e.target.style.backgroundColor = "#22c55e")}
+            >
+              คำนวณค่าส่ง EMS
+            </button>
+            {shippingCost && (
+              <div
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "14px",
+                  flex: 1, // ช่องผลลัพธ์กว้างเต็ม
+                }}
+              >
+                {shippingCost.isIsland && <p>พื้นที่เกาะ (+15 บาท)</p>}
+                <p>ค่าส่ง EMS: {shippingCost.total} บาท</p>
+              </div>
             )}
-            <p>ราคารวมอุปกรณ์: {totalEquipment} บาท</p>
           </div>
-
-          {/* <div className="flex-1 flex flex-col">
-            <p>ค่าอุปกรณ์: {totalEquipment} บาท</p>
-            <p>รวมค่าส่ง + อุปกรณ์: {totalPrice} บาท</p>
-            <p>ราคาสุทธิ: {netPrice} บาท</p>
-          </div> */}
         </div>
+
+        {/* 🔧 เพิ่มอุปกรณ์ */}
+<div className="w-full bg-[#FFFDF5] rounded-xl shadow-sm p-5 border border-gray-200">
+  <h2 className="text-lg font-semibold text-[#E14434] mb-4">
+    🧰 เลือกอุปกรณ์เพิ่มเติม
+  </h2>
+
+  {/* ส่วนเลือกอุปกรณ์ */}
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+      <DropdownCategory
+        categoryName="📦 กล่อง"
+        categoryData={boxes}
+        categoryKey="boxes"
+      />
+    </div>
+
+    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+      <DropdownCategory
+        categoryName="✉️ ซอง"
+        categoryData={envelopes}
+        categoryKey="envelopes"
+      />
+    </div>
+
+    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+      <DropdownCategory
+        categoryName="🧵 รัดกล่อง"
+        categoryData={ties}
+        categoryKey="ties"
+      />
+    </div>
+
+    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+      <DropdownCategory
+        categoryName="💨 บับเบิ้ล"
+        categoryData={bubble_wrap}
+        categoryKey="bubble_wrap"
+      />
+    </div>
+  </div>
+
+  {/* ส่วนแสดงอุปกรณ์ที่เลือก */}
+  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <h3 className="text-md font-semibold text-gray-800 mb-3">
+      🧾 อุปกรณ์ที่เลือก
+    </h3>
+
+    {selectedEquipment.length === 0 ? (
+      <p className="text-gray-500 italic">ยังไม่ได้เลือกอุปกรณ์</p>
+    ) : (
+      <ul className="space-y-2">
+        {selectedEquipment.map((item, idx) => (
+          <li
+            key={idx}
+            className="flex justify-between items-center bg-[#FFF7DD] px-3 py-2 rounded-md border border-[#E14434]/20"
+          >
+            <span className="text-gray-800">
+              {item.name} ({item.price} บาท)
+            </span>
+            <button
+              className="text-sm text-red-600 hover:text-red-800 font-medium"
+              onClick={() => handleRemoveItem(idx)}
+            >
+              ลบ
+            </button>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <div className="border-t border-gray-200 mt-4 pt-3 text-right">
+      <p className="font-semibold text-gray-800">
+        💰 ราคารวมอุปกรณ์:{" "}
+        <span className="text-[#E14434]">{totalEquipment}</span> บาท
+      </p>
+    </div>
+  </div>
+</div>
 
         <button
           type="submit"
