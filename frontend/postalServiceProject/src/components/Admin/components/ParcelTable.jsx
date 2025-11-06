@@ -75,7 +75,12 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#FFFDF5]">
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg w-full max-w-6xl">
+      <div
+        className="relative overflow-x-auto shadow-md sm:rounded-lg w-full max-w-6xl"
+        style={{
+          borderRadius: "10px",
+        }}
+      >
         <table className="w-full table-auto rounded-lg text-sm border-none mx-auto">
           <thead style={{ backgroundColor: "#E14434", color: "white" }}>
             <tr>
@@ -192,57 +197,134 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
       {showModal &&
         createPortal(
           <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn"
             onClick={handleClose}
           >
             <div
-              className="bg-white rounded-lg shadow-2xl w-full max-w-2xl p-6 transform transition-all duration-300 ease-out scale-100 animate-fadeInUp"
+              className="bg-white rounded-xl shadow-2xl p-8 relative transform transition-all duration-300 ease-out"
+              style={{
+                width: "800px",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                position: "fixed",
+                borderRadius: "10px",
+                padding: "20px",
+                backgroundColor: "white",
+                boxShadow: "0 8px 25px rgba(0, 0, 0, 0.2)", // 💡 เพิ่มเงาสวยๆ
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
+              <h3 className="text-2xl font-semibold text-[#E14434] mb-6 text-center">
                 ✏️ แก้ไขข้อมูลพัสดุ
               </h3>
 
-              <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-                {[
-                  {
-                    label: "Tracking No.",
-                    name: "tracking_number",
-                    type: "text",
-                  },
-                  { label: "ผู้ส่ง", name: "sender", type: "text" },
-                  { label: "ผู้รับ", name: "receiver", type: "text" },
-                  { label: "ที่อยู่", name: "address", type: "text" },
-                  { label: "น้ำหนัก (g)", name: "weight", type: "number" },
-                ].map((field) => (
-                  <div key={field.name}>
-                    <label className="block mb-1 text-sm font-medium">
-                      {field.label}
-                    </label>
-                    <input
-                      type={field.type}
-                      name={field.name}
-                      value={editingParcel?.[field.name] || ""}
-                      onChange={handleChange}
-                      className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-[#E14434]"
-                    />
-                  </div>
-                ))}
+              <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-5">
+                {/* Tracking No. เต็มแถว */}
+                <div className="col-span-2">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    Tracking No.
+                  </label>
+                  <input
+                    type="text"
+                    name="tracking_number"
+                    value={editingParcel?.tracking_number || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
+                    style={{
+                      borderRadius: "10px",
+                    }}
+                  />
+                </div>
 
-                {/* ปุ่ม */}
-                <div className="col-span-2 flex justify-end mt-4 gap-3">
+                {/* ผู้ส่ง */}
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    ผู้ส่ง
+                  </label>
+                  <input
+                    type="text"
+                    name="sender"
+                    value={editingParcel?.sender || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
+                    style={{
+                      borderRadius: "10px",
+                    }}
+                  />
+                </div>
+
+                {/* ผู้รับ */}
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    ผู้รับ
+                  </label>
+                  <input
+                    type="text"
+                    name="receiver"
+                    value={editingParcel?.receiver || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
+                    style={{
+                      borderRadius: "10px",
+                    }}
+                  />
+                </div>
+
+                {/* ที่อยู่ */}
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    ที่อยู่
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={editingParcel?.address || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
+                    style={{
+                      borderRadius: "10px",
+                    }}
+                  />
+                </div>
+
+                {/* น้ำหนัก */}
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    น้ำหนัก (g)
+                  </label>
+                  <input
+                    type="number"
+                    name="weight"
+                    value={editingParcel?.weight || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
+                    style={{
+                      borderRadius: "10px",
+                    }}
+                  />
+                </div>
+
+                {/* ปุ่มบันทึก/ยกเลิก */}
+                <div className="col-span-2 flex justify-end mt-6 gap-4">
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-[#E14434] text-white rounded-lg hover:bg-red-700"
+                    className="px-6 py-2.5 bg-[#E14434] text-white rounded-lg hover:bg-red-700 transition"
+                    style={{
+                      borderRadius: "10px",
+                    }}
                   >
-                    บันทึก
+                    💾 บันทึก
                   </button>
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                    className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                    style={{
+                      borderRadius: "10px",
+                    }}
                   >
-                    ยกเลิก
+                    ❌ ยกเลิก
                   </button>
                 </div>
               </form>

@@ -52,7 +52,7 @@ const RegisterParcel = () => {
   // ค่าส่ง
   const handleCalculateShipping = async () => {
     if (!weight || !addressData.postal_code) {
-      setMessage("กรุณากรอกน้ำหนักและรหัสไปรษณีย์ก่อนคำนวณค่าส่ง");
+      alert("กรุณากรอกน้ำหนักและรหัสไปรษณีย์ก่อนคำนวณค่าส่ง");
       return;
     }
 
@@ -83,11 +83,11 @@ const RegisterParcel = () => {
         });
       } else {
         setEmsResult(null);
-        setMessage("ไม่สามารถคำนวณค่าส่งได้");
+        alert("ไม่สามารถคำนวณค่าส่งได้");
       }
     } catch (err) {
       console.error(err);
-      setMessage("เกิดข้อผิดพลาดในการคำนวณค่าส่ง");
+      alert("เกิดข้อผิดพลาดในการคำนวณค่าส่ง");
     }
   };
 
@@ -172,7 +172,7 @@ const RegisterParcel = () => {
       weight <= 0 ||
       !addressData.district
     ) {
-      setMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
+      alert("กรุณากรอกข้อมูลให้ครบถ้วน");
       return;
     }
 
@@ -249,6 +249,7 @@ const RegisterParcel = () => {
       );
 
       setMessage(res.data.message || "ลงทะเบียนพัสดุสำเร็จ");
+      setLoading(false);
 
       // reset form
       setTrackingNumber("");
@@ -265,9 +266,7 @@ const RegisterParcel = () => {
       setAddressData({});
     } catch (err) {
       console.error(err);
-      setMessage(
-        err.response?.data?.message || "เกิดข้อผิดพลาดในการลงทะเบียนพัสดุ"
-      );
+      alert("เกิดข้อผิดพลาดในการลงทะเบียนพัสดุ"); // 👈 เด้ง popup แจ้งข้อผิดพลาด
     } finally {
       setLoading(false);
     }
@@ -425,14 +424,12 @@ const RegisterParcel = () => {
         </div>
 
         {/* น้ำหนัก + ค่าส่ง */}
-        <div>
-          <div className="flex-1 flex flex-col">
+        <div className="mb-3">
+          {/* ช่องกรอกน้ำหนัก */}
+          <div className="mb-3">
             <label
-              style={{
-                fontWeight: "500",
-                textAlign: "left",
-                marginBottom: "4px",
-              }}
+              className="form-label fw-medium text-start d-block"
+              style={{ marginBottom: "4px" }}
             >
               น้ำหนักพัสดุ (g) :
             </label>
@@ -444,135 +441,138 @@ const RegisterParcel = () => {
             />
           </div>
 
-          <div
-            style={{
-              display: "flex", // แนวนอนเฉพาะส่วนนี้
-              flexDirection: "row",
-              textAlign: "left",
-              gap: "16px",
-              width: "100%",
-            }}
-          >
-            <button
-              type="button"
-              onClick={handleCalculateShipping}
-              style={{
-                backgroundColor: "#22c55e", // เขียวสด
-                color: "black",
-                border: "none",
-                borderRadius: "20px", // โค้งมากขึ้น
-                padding: "6px 12px", // ปุ่มเล็กลง
-                fontSize: "14px",
-                cursor: "pointer",
-                flex: 1, // ทำให้ปุ่มกว้างเต็มพื้นที่ที่มี
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => (e.target.style.backgroundColor = "#16a34a")}
-              onMouseOut={(e) => (e.target.style.backgroundColor = "#22c55e")}
-            >
-              คำนวณค่าส่ง EMS
-            </button>
-            {shippingCost && (
-              <div
+          {/* ปุ่มคำนวณ + กล่องผลลัพธ์ */}
+          <div className="row g-2 align-items-center mt-2">
+            <div className="col-6">
+              <button
+                type="button"
+                onClick={handleCalculateShipping}
+                className="btn btn-success w-100 py-2"
                 style={{
-                  backgroundColor: "#f3f4f6",
-                  padding: "8px 12px",
+                  color: "black", // override ให้ตัวหนังสือเป็นดำ
                   borderRadius: "8px",
-                  border: "1px solid #d1d5db",
                   fontSize: "14px",
-                  flex: 1, // ช่องผลลัพธ์กว้างเต็ม
+                  height: "50px",
+                  transition: "0.2s",
+                }}
+                onMouseOver={(e) =>
+                  (e.target.style.backgroundColor = "#16a34a")
+                }
+                onMouseOut={(e) => (e.target.style.backgroundColor = "#22c55e")}
+              >
+                คำนวณค่าส่ง EMS
+              </button>
+            </div>
+
+            <div className="col-6">
+              <div
+                className="d-flex flex-column justify-content-center text-center border rounded bg-light"
+                style={{
+                  height: "50px",
+                  fontSize: "14px",
+                  borderColor: "#d1d5db",
                 }}
               >
-                {shippingCost.isIsland && <p>พื้นที่เกาะ (+15 บาท)</p>}
-                <p>ค่าส่ง EMS: {shippingCost.total} บาท</p>
+                {shippingCost?.isIsland && (
+                  <p className="m-0">พื้นที่เกาะ (+15 บาท)</p>
+                )}
+                <p className="m-0">
+                  ค่าส่ง EMS: {shippingCost?.total ?? 0} บาท
+                </p>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
         {/* 🔧 เพิ่มอุปกรณ์ */}
-<div className="w-full bg-[#FFFDF5] rounded-xl shadow-sm p-5 border border-gray-200">
-  <h2 className="text-lg font-semibold text-[#E14434] mb-4">
-    🧰 เลือกอุปกรณ์เพิ่มเติม
-  </h2>
+        <div className="w-full bg-[#FFFDF5] rounded-xl shadow-sm p-5 border border-gray-200">
+          <h2 className="text-lg font-semibold text-[#E14434] mb-4">
+            🧰 เลือกอุปกรณ์เพิ่มเติม
+          </h2>
 
-  {/* ส่วนเลือกอุปกรณ์ */}
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
-      <DropdownCategory
-        categoryName="📦 กล่อง"
-        categoryData={boxes}
-        categoryKey="boxes"
-      />
-    </div>
+          {/* ส่วนเลือกอุปกรณ์ */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+              <DropdownCategory
+                categoryName="📦 กล่อง"
+                categoryData={boxes}
+                categoryKey="boxes"
+              />
+            </div>
 
-    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
-      <DropdownCategory
-        categoryName="✉️ ซอง"
-        categoryData={envelopes}
-        categoryKey="envelopes"
-      />
-    </div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+              <DropdownCategory
+                categoryName="✉️ ซอง"
+                categoryData={envelopes}
+                categoryKey="envelopes"
+              />
+            </div>
 
-    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
-      <DropdownCategory
-        categoryName="🧵 รัดกล่อง"
-        categoryData={ties}
-        categoryKey="ties"
-      />
-    </div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+              <DropdownCategory
+                categoryName="🧵 รัดกล่อง"
+                categoryData={ties}
+                categoryKey="ties"
+              />
+            </div>
 
-    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
-      <DropdownCategory
-        categoryName="💨 บับเบิ้ล"
-        categoryData={bubble_wrap}
-        categoryKey="bubble_wrap"
-      />
-    </div>
-  </div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+              <DropdownCategory
+                categoryName="💨 บับเบิ้ล"
+                categoryData={bubble_wrap}
+                categoryKey="bubble_wrap"
+              />
+            </div>
+          </div>
 
-  {/* ส่วนแสดงอุปกรณ์ที่เลือก */}
-  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-    <h3 className="text-md font-semibold text-gray-800 mb-3">
-      🧾 อุปกรณ์ที่เลือก
-    </h3>
+          {/* ส่วนแสดงอุปกรณ์ที่เลือก */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+            <h3 className="text-md font-semibold text-gray-800 mb-3">
+              🧾 อุปกรณ์ที่เลือก
+            </h3>
 
-    {selectedEquipment.length === 0 ? (
-      <p className="text-gray-500 italic">ยังไม่ได้เลือกอุปกรณ์</p>
-    ) : (
-      <ul className="space-y-2">
-        {selectedEquipment.map((item, idx) => (
-          <li
-            key={idx}
-            className="flex justify-between items-center bg-[#FFF7DD] px-3 py-2 rounded-md border border-[#E14434]/20"
-          >
-            <span className="text-gray-800">
-              {item.name} ({item.price} บาท)
-            </span>
-            <button
-              className="text-sm text-red-600 hover:text-red-800 font-medium"
-              onClick={() => handleRemoveItem(idx)}
-            >
-              ลบ
-            </button>
-          </li>
-        ))}
-      </ul>
-    )}
+            {selectedEquipment.length === 0 ? (
+              <p className="text-gray-500 italic">ยังไม่ได้เลือกอุปกรณ์</p>
+            ) : (
+              <ul className="space-y-2">
+                {selectedEquipment.map((item, idx) => (
+                  <li
+                    key={idx}
+                    className="flex justify-between items-center bg-[#FFF7DD] px-3 py-2 rounded-md border border-[#E14434]/20"
+                  >
+                    <span className="text-gray-800">
+                      {item.name} ({item.price} บาท)
+                    </span>
+                    <button
+                      className="text-sm text-red-600 hover:text-red-800 font-medium"
+                      onClick={() => handleRemoveItem(idx)}
+                    >
+                      ลบ
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-    <div className="border-t border-gray-200 mt-4 pt-3 text-right">
-      <p className="font-semibold text-gray-800">
-        💰 ราคารวมอุปกรณ์:{" "}
-        <span className="text-[#E14434]">{totalEquipment}</span> บาท
-      </p>
-    </div>
-  </div>
-</div>
+            <div className="border-t border-gray-200 mt-4 pt-3 text-right">
+              <p className="font-semibold text-gray-800">
+                💰 ราคารวมอุปกรณ์:{" "}
+                <span className="text-[#E14434]">{totalEquipment}</span> บาท
+              </p>
+            </div>
+          </div>
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-500 text-black p-2 rounded"
+          className="btn btn-success btn-lg w-100 mb-2"
+          style={{
+            color: "black", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
+            borderRadius: "5px",
+            fontSize: "18px",
+            height: "50px",
+          }}
         >
           {loading ? "กำลังลงบันทึก..." : "บันทึกพัสดุ"}
         </button>
@@ -581,10 +581,17 @@ const RegisterParcel = () => {
       </form>
 
       <button
-        className="w-full bg-blue-500 text-black p-2 rounded"
+        type="button"
         onClick={goToPayment}
+        className="btn btn-success btn-lg w-100 mb-2"
+        style={{
+          color: "black", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
+          borderRadius: "5px",
+          fontSize: "18px",
+          height: "50px",
+        }}
       >
-        ไปหน้าใบเสร็จชำระเงิน
+        ใบเสร็จชำระเงิน
       </button>
     </div>
   );

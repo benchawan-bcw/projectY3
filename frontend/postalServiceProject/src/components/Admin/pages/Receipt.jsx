@@ -264,42 +264,158 @@ const Receipt = () => {
   };
 
   return (
-    <div style={{ margin: "1rem" }}>
-      <h1>ใบเสร็จรับเงินสินค้า</h1>
+    <div
+      style={{
+        width: "500px",
+        margin: "40px auto",
+        padding: "28px",
+        backgroundColor: "#ffffff",
+        borderRadius: "12px",
+        boxShadow: "0 6px 16px rgba(0, 0, 0, 0.1)",
+        fontFamily: "Prompt, sans-serif",
+        color: "#333",
+      }}
+    >
+      {/* หัวเรื่อง */}
+      <h1
+        style={{
+          textAlign: "center",
+          marginBottom: "1rem",
+          color: "#2563eb",
+          fontSize: "24px",
+          fontWeight: "700",
+        }}
+      >
+        🧾 ใบเสร็จรับเงินสินค้า
+      </h1>
 
-      <div style={{ marginBottom: "0.5rem" }}>
-        <label>กรอกชื่อผู้ส่ง: </label>
+      {/* ฟอร์มค้นหา */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <label
+          style={{
+            fontWeight: "600",
+            color: "#374151",
+            whiteSpace: "nowrap",
+          }}
+        >
+          กรอกชื่อผู้ส่ง:
+        </label>
         <input
           type="text"
           value={senderName}
           onChange={(e) => setSenderName(e.target.value)}
-          style={{ marginRight: "1rem" }}
+          placeholder="ชื่อผู้ส่ง"
+          style={{
+            flex: 1,
+            padding: "8px 12px",
+            borderRadius: "6px",
+            border: "1px solid #d1d5db",
+            outline: "none",
+            transition: "0.3s",
+          }}
+          onFocus={(e) => (e.target.style.border = "1px solid #60a5fa")}
+          onBlur={(e) => (e.target.style.border = "1px solid #d1d5db")}
         />
-        <button onClick={fetchParcel}>ค้นหา</button>
+        <button
+          onClick={fetchParcel}
+          style={{
+            backgroundColor: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "8px 16px",
+            cursor: "pointer",
+            fontWeight: "600",
+            transition: "0.3s",
+          }}
+          onMouseEnter={(e) => (e.target.style.backgroundColor = "#1e40af")}
+          onMouseLeave={(e) => (e.target.style.backgroundColor = "#2563eb")}
+        >
+          🔍 ค้นหา
+        </button>
       </div>
 
+      {/* รายชื่อผู้รับ */}
       {parcels && (
         <div
           style={{
-            border: "1px solid #000",
-            padding: "0.5rem",
-            width: "fit-content",
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            padding: "1rem",
+            backgroundColor: "#f9fafb",
+            minHeight: "200px",
           }}
         >
-          <h3 style={{ textAlign: "center" }}>รายชื่อผู้รับของ {senderName}</h3>
-          <ul>
+          <h3
+            style={{
+              textAlign: "center",
+              marginBottom: "0.75rem",
+              color: "#374151",
+              fontWeight: "600",
+            }}
+          >
+            รายชื่อผู้รับของ {senderName}
+          </h3>
+          <ul style={{ listStyleType: "none", padding: 0, margin: 0 }}>
             {parcels.map((p) => (
-              <li key={p.tracking_number}>
-                {p.receiver} — {p.tracking_number}
+              <li
+                key={p.tracking_number}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "8px 12px",
+                  borderBottom: "1px solid #e5e7eb",
+                  backgroundColor: "#fff",
+                  borderRadius: "6px",
+                  marginBottom: "6px",
+                  transition: "background-color 0.3s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f1f5f9")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#fff")
+                }
+              >
+                <span>👤 {p.receiver}</span>
+                <span style={{ fontWeight: "500", color: "#2563eb" }}>
+                  #{p.tracking_number}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <button onClick={handlePrint} style={{ marginTop: "1rem" }}>
-        🖨 พิมพ์ใบเสร็จ
-      </button>
+      {/* ปุ่มพิมพ์ */}
+      <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+        <button
+          onClick={handlePrint}
+          style={{
+            backgroundColor: "#10b981",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            padding: "10px 20px",
+            fontWeight: "600",
+            fontSize: "15px",
+            cursor: "pointer",
+            transition: "0.3s",
+          }}
+          onMouseEnter={(e) => (e.target.style.backgroundColor = "#059669")}
+          onMouseLeave={(e) => (e.target.style.backgroundColor = "#10b981")}
+        >
+          🖨 พิมพ์ใบเสร็จ
+        </button>
+      </div>
     </div>
   );
 };

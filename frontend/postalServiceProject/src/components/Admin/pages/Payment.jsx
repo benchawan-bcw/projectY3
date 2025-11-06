@@ -251,129 +251,372 @@ const Payment = () => {
       //   scrollbarWidth: "none",
       //   msOverflowStyle: "none",
       // }}
-      className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg space-y-6 font-sans"
+      style={{
+        width: "500px",
+        margin: "0 auto",
+        padding: "24px",
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+        fontFamily: "sans-serif",
+      }}
     >
       {/* <style>{`div::-webkit-scrollbar { display: none; }`}</style> */}
 
-      <h3>ใบเสร็จชำระเงิน</h3>
+      <div
+        className="p-5 rounded-2xl shadow-md"
+        style={{
+          backgroundColor: "#f9fafb",
+          border: "1px solid #e5e7eb",
+          borderRadius: "10px",
+          maxWidth: "500px",
+          margin: "0 auto",
+        }}
+      >
+        {/* หัวข้อใบเสร็จ */}
+        <h3
+          className="text-center mb-4"
+          style={{
+            fontSize: "22px",
+            fontWeight: "700",
+            color: "#374151",
+          }}
+        >
+          🧾 ใบเสร็จชำระเงิน
+        </h3>
 
-      <div className="bg-gray-50 p-4 rounded-lg shadow-inner">
-        <p>รายละเอียดอุปกรณ์</p>
-        {equipment.length > 0 ? (
-          <ul className="border rounded-lg divide-y divide-gray-200 list-none">
-            {equipment.map((item, index) => (
-              <li
-                key={index}
-                className="flex justify-between p-2 hover:bg-gray-50 transition"
-              >
-                <span className="text-left">{item.name}</span>
-                <span className="text-right">{item.price?.toFixed(2)} บาท</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500 text-left">ไม่มีอุปกรณ์เพิ่มเติม</p>
-        )}
+        {/* รายละเอียดอุปกรณ์ */}
+        <div className="mb-4">
+          <h4
+            style={{
+              fontWeight: "600",
+              color: "#1f2937",
+              borderBottom: "2px solid #d1d5db",
+              paddingBottom: "6px",
+              marginBottom: "10px",
+            }}
+          >
+            📦 รายละเอียดอุปกรณ์
+          </h4>
 
-        <p>ค่าอุปกรณ์ : {totalEquipmentPrice.toFixed(2)} บาท</p>
+          {equipment.length > 0 ? (
+            <ul
+              className="border rounded-lg divide-y divide-gray-200 list-none bg-white p-3"
+              style={{ borderRadius: "10px" }}
+            >
+              {equipment.map((item, index) => (
+                <li
+                  key={index}
+                  className="flex justify-between p-2 hover:bg-gray-50 transition "
+                  style={{ fontSize: "15px" }}
+                >
+                  <span>{item.name}</span>
+                  <span style={{ fontWeight: "500" }}>
+                    {item.price?.toFixed(2)} บาท
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-left mt-2">
+              ไม่มีอุปกรณ์เพิ่มเติม
+            </p>
+          )}
+        </div>
 
-        <p>ค่าส่ง : {shippingCostNumber.toFixed(2)} บาท</p>
-        <p className="font-bold mt-2 text-lg">
-          รวมทั้งหมด : {totalPriceNumber.toFixed(2)} บาท
-        </p>
+        {/* สรุปราคา */}
+        <div
+          className="bg-white p-3 rounded-lg border"
+          style={{
+            fontSize: "15px",
+            borderRadius: "10px",
+            lineHeight: "1.8",
+            boxShadow: "inset 0 1px 3px rgba(0,0,0,0.05)",
+          }}
+        >
+          <div className="flex justify-between">
+            <span>ค่าอุปกรณ์</span>
+            <span style={{ fontWeight: "500" }}>
+              {totalEquipmentPrice.toFixed(2)} บาท
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>ค่าส่ง</span>
+            <span style={{ fontWeight: "500" }}>
+              {shippingCostNumber.toFixed(2)} บาท
+            </span>
+          </div>
+
+          <hr className="my-2 border-gray-300" />
+
+          <div className="flex justify-between text-lg font-bold text-green-700">
+            <span>💰 รวมทั้งหมด</span>
+            <span>{totalPriceNumber.toFixed(2)} บาท</span>
+          </div>
+        </div>
       </div>
 
       {/* วิธีชำระเงิน */}
-      <div className="flex gap-4 justify-center mt-4">
-        <label className="flex items-center gap-2">
+      <div
+        className="d-flex justify-content-center align-items-center gap-4 mt-4"
+        style={{
+          backgroundColor: "#f9fafb",
+          border: "1px solid #e5e7eb",
+          borderRadius: "10px",
+          padding: "16px 20px",
+        }}
+      >
+        <label
+          className="d-flex align-items-center justify-content-center gap-2 p-3 rounded w-50"
+          style={{
+            cursor: "pointer",
+            backgroundColor: paymentMethod === "cash" ? "#dcfce7" : "white",
+            border:
+              paymentMethod === "cash"
+                ? "2px solid #22c55e"
+                : "1px solid #d1d5db",
+            transition: "all 0.2s ease",
+          }}
+        >
           <input
             type="radio"
             value="cash"
             checked={paymentMethod === "cash"}
             onChange={(e) => setPaymentMethod(e.target.value)}
+            style={{ accentColor: "#22c55e", transform: "scale(1.2)" }}
           />
-          เงินสด
+          <span style={{ fontWeight: "500" }}>💵 เงินสด</span>
         </label>
-        <label className="flex items-center gap-2">
+
+        <label
+          className="d-flex align-items-center justify-content-center gap-2 p-3 rounded w-50"
+          style={{
+            cursor: "pointer",
+            backgroundColor: paymentMethod === "qr" ? "#e0f2fe" : "white",
+            border:
+              paymentMethod === "qr"
+                ? "2px solid #3b82f6"
+                : "1px solid #d1d5db",
+            transition: "all 0.2s ease",
+          }}
+        >
           <input
             type="radio"
             value="qr"
             checked={paymentMethod === "qr"}
             onChange={(e) => setPaymentMethod(e.target.value)}
+            style={{ accentColor: "#3b82f6", transform: "scale(1.2)" }}
           />
-          QR Code
+          <span style={{ fontWeight: "500" }}>📱 QR Code</span>
         </label>
       </div>
 
       {/* 🔹 ส่วนการชำระด้วยเงินสด */}
       {paymentMethod === "cash" && (
-        <div className="mt-3">
-          <label>จำนวนเงินที่ลูกค้าชำระ:</label>
-          <input
-            type="number"
-            value={customerPaid}
-            onChange={(e) => setCustomerPaid(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
+        <div
+          className="mt-4 p-4 shadow-sm border rounded-3"
+          style={{ backgroundColor: "#f9fafb" }}
+        >
+          <h5
+            className="mb-3 text-center"
+            style={{ fontWeight: "600", color: "#111827" }}
+          >
+            💵 ชำระด้วยเงินสด
+          </h5>
+
+          {/* ช่องกรอกจำนวนเงิน */}
+          <div className="mb-3">
+            <label
+              className="form-label"
+              style={{ fontWeight: "500", color: "#374151" }}
+            >
+              จำนวนเงินที่ลูกค้าชำระ:
+            </label>
+            <input
+              type="number"
+              value={customerPaid}
+              onChange={(e) => setCustomerPaid(e.target.value)}
+              className="form-control form-control-lg text-center"
+              placeholder="ระบุจำนวนเงิน (บาท)"
+              style={{
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
+                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)",
+              }}
+            />
+          </div>
 
           {/* ปุ่มคำนวณ */}
           <button
             onClick={handlePayment}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-black px-4 py-2 rounded w-full"
             disabled={loading}
+            className="btn w-100 mb-3"
+            style={{
+              backgroundColor: "#3b82f6",
+              color: "white",
+              borderRadius: "8px",
+              fontSize: "16px",
+              height: "45px",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#2563eb")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#3b82f6")}
           >
-            {loading ? "กำลังประมวลผล..." : "คำนวณ"}
-          </button>
-
-          {/* ปุ่มบันทึกข้อมูล */}
-          <button
-            onClick={handleUpdatePayment}
-            className="mt-3 bg-green-600 hover:bg-green-700 text-black px-4 py-2 rounded w-full"
-            disabled={loading}
-          >
-            {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+            {loading ? "กำลังประมวลผล..." : "คำนวณเงินทอน"}
           </button>
 
           {/* แสดงผลลัพธ์หลังคำนวณ */}
           {result && result.success && (
-            <div className="mt-5 border-t pt-3 text-center">
-              <p>💵 ลูกค้าชำระ: {result.customer_paid} บาท</p>
-              <p>💰 เงินทอน: {result.change} บาท</p>
+            <div
+              className="text-center py-3 rounded-3"
+              style={{
+                backgroundColor: "#ecfdf5",
+                border: "1px solid #d1fae5",
+                marginTop: "8px",
+              }}
+            >
+              <p className="mb-1" style={{ fontWeight: "500" }}>
+                💰 ลูกค้าชำระ:{" "}
+                <span className="fw-bold">{result.customer_paid}</span> บาท
+              </p>
+              <p
+                className="mb-0"
+                style={{ color: "#059669", fontWeight: "600" }}
+              >
+                เงินทอน: {result.change} บาท
+              </p>
             </div>
           )}
 
+          {/* ปุ่มบันทึกข้อมูล */}
+          <button
+            onClick={handleUpdatePayment}
+            disabled={loading}
+            className="btn btn-success btn-lg w-100 mt-3"
+            style={{
+              color: "black",
+              borderRadius: "8px",
+              fontSize: "18px",
+              height: "50px",
+              fontWeight: "500",
+            }}
+          >
+            {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+          </button>
+
           {/* ถ้ามี error */}
           {result && !result.success && (
-            <p className="text-red-600 mt-3">{result.message}</p>
+            <div
+              className="alert alert-danger mt-3 text-center py-2"
+              role="alert"
+              style={{
+                borderRadius: "8px",
+                fontSize: "14px",
+              }}
+            >
+              ⚠️ {result.message}
+            </div>
           )}
         </div>
       )}
 
       {/* 🔹 QR Code */}
       {paymentMethod === "qr" && result?.qr_image && (
-        <div className="mt-4 text-center">
-          <h4 className="font-medium">📱 สแกนเพื่อชำระเงิน</h4>
-          <img
-            src={result.qr_image}
-            alt="QR Code สำหรับชำระเงิน"
-            className="w-56 h-56 mx-auto mt-2 border"
-          />
-          <p className="mt-2">ยอดชำระ: {totalPriceNumber.toFixed(2)} บาท</p>
+        <div
+          className="mt-4 p-4 shadow-sm border rounded-3 text-center"
+          style={{ backgroundColor: "#f9fafb" }}
+        >
+          {/* หัวข้อ */}
+          <h5
+            className="mb-3"
+            style={{
+              fontWeight: "600",
+              color: "#4b5563",
+            }}
+          >
+            📱 สแกนเพื่อชำระเงิน
+          </h5>
 
+          {/* รูป QR Code */}
+          <div
+            className="d-flex justify-content-center align-items-center"
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              border: "1px solid #e5e7eb",
+              padding: "12px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              width: "240px",
+              height: "240px",
+              margin: "0 auto",
+            }}
+          >
+            <img
+              src={result.qr_image}
+              alt="QR Code สำหรับชำระเงิน"
+              style={{
+                width: "200px",
+                height: "200px",
+                borderRadius: "8px",
+              }}
+            />
+          </div>
+
+          {/* ยอดชำระ */}
+          <p
+            className="mt-3 mb-3"
+            style={{
+              fontSize: "16px",
+              fontWeight: "500",
+              color: "#111827",
+            }}
+          >
+            💰 ยอดชำระ:{" "}
+            <span style={{ color: "#059669", fontWeight: "700" }}>
+              {totalPriceNumber.toFixed(2)} บาท
+            </span>
+          </p>
+
+          {/* ปุ่มพิมพ์ใบเสร็จ */}
           <button
             onClick={handlePrint}
-            className="mt-4 bg-purple-600 hover:bg-purple-700 text-black px-4 py-2 rounded w-full"
+            className="btn w-100 mb-2"
+            style={{
+              backgroundColor: "#a855f7",
+              color: "black",
+              borderRadius: "8px",
+              fontSize: "16px",
+              height: "45px",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#9333ea")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#a855f7")}
           >
             🖨 พิมพ์ใบเสร็จ
           </button>
 
+          {/* ปุ่มบันทึกข้อมูล */}
           <button
             onClick={handleUpdatePayment}
-            className="mt-3 bg-green-600 hover:bg-green-700 text-black px-4 py-2 rounded w-full"
             disabled={loading}
+            className="btn btn-success btn-lg w-100"
+            style={{
+              color: "black",
+              borderRadius: "8px",
+              fontSize: "18px",
+              height: "50px",
+              fontWeight: "500",
+            }}
           >
             {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
           </button>
+
+          {/* Loading indicator (ถ้ามี) */}
+          {loading && (
+            <p className="mt-3 text-secondary" style={{ fontSize: "14px" }}>
+              ⏳ กำลังประมวลผล...
+            </p>
+          )}
         </div>
       )}
 
