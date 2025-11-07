@@ -54,6 +54,11 @@ const Payment = () => {
   const totalPriceNumber = totalEquipmentPrice + shippingCostNumber;
 
   const handleUpdatePayment = async () => {
+    // ตรวจสอบว่าลูกค้าจ่ายครบหรือยัง
+    if (paymentMethod === "cash" && Number(customerPaid) < totalPriceNumber) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -78,13 +83,13 @@ const Payment = () => {
         setPaymentMethod(parcel.paymentMethod || "ไม่ระบุ");
         setTotalPrice(parcel.total_price);
         setCustomerPaid(parcel.customer_paid || 0);
-        alert("อัปเดตข้อมูลการชำระเงินสำเร็จ ✅");
+        alert("อัปเดตข้อมูลการชำระเงินสำเร็จ");
       } else {
         setError("ไม่พบข้อมูลพัสดุที่อัปเดต");
       }
     } catch (err) {
       console.error("เกิดข้อผิดพลาด:", err);
-      setError("อัปเดตข้อมูลไม่สำเร็จ ❌");
+      setError("อัปเดตข้อมูลไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
@@ -245,12 +250,6 @@ const Payment = () => {
 
   return (
     <div
-      // style={{
-      //   height: "300px",
-      //   overflowY: "scroll",
-      //   scrollbarWidth: "none",
-      //   msOverflowStyle: "none",
-      // }}
       style={{
         width: "500px",
         margin: "0 auto",
@@ -261,10 +260,21 @@ const Payment = () => {
         fontFamily: "sans-serif",
       }}
     >
-      {/* <style>{`div::-webkit-scrollbar { display: none; }`}</style> */}
+      {/* หัวข้อใบเสร็จ */}
+      <h1
+        className="text-center mb-4"
+        style={{
+          fontSize: "24px",
+          fontWeight: "bold",
+          marginBottom: "24px",
+          color: "#dc2626",
+        }}
+      >
+        ใบเสร็จชำระเงิน
+      </h1>
 
       <div
-        className="p-5 rounded-2xl shadow-md"
+        className="p-4 rounded-2xl shadow-md"
         style={{
           backgroundColor: "#f9fafb",
           border: "1px solid #e5e7eb",
@@ -273,30 +283,18 @@ const Payment = () => {
           margin: "0 auto",
         }}
       >
-        {/* หัวข้อใบเสร็จ */}
-        <h3
-          className="text-center mb-4"
-          style={{
-            fontSize: "22px",
-            fontWeight: "700",
-            color: "#374151",
-          }}
-        >
-          🧾 ใบเสร็จชำระเงิน
-        </h3>
-
         {/* รายละเอียดอุปกรณ์ */}
         <div className="mb-4">
           <h4
             style={{
-              fontWeight: "600",
-              color: "#1f2937",
-              borderBottom: "2px solid #d1d5db",
+              fontSize: "20px",
+              color: "black",
               paddingBottom: "6px",
               marginBottom: "10px",
+              textAlign: "left",
             }}
           >
-            📦 รายละเอียดอุปกรณ์
+            รายละเอียดอุปกรณ์
           </h4>
 
           {equipment.length > 0 ? (
@@ -308,7 +306,13 @@ const Payment = () => {
                 <li
                   key={index}
                   className="flex justify-between p-2 hover:bg-gray-50 transition "
-                  style={{ fontSize: "15px" }}
+                  style={{
+                    fontSize: "15px",
+                    borderBottom:
+                      index !== equipment.length - 1
+                        ? "1px solid #D9D9D9"
+                        : "none",
+                  }}
                 >
                   <span>{item.name}</span>
                   <span style={{ fontWeight: "500" }}>
@@ -335,7 +339,7 @@ const Payment = () => {
           }}
         >
           <div className="flex justify-between">
-            <span>ค่าอุปกรณ์</span>
+            <span>ค่าอุปกรณ์ทั้งหมด</span>
             <span style={{ fontWeight: "500" }}>
               {totalEquipmentPrice.toFixed(2)} บาท
             </span>
@@ -350,7 +354,7 @@ const Payment = () => {
           <hr className="my-2 border-gray-300" />
 
           <div className="flex justify-between text-lg font-bold text-green-700">
-            <span>💰 รวมทั้งหมด</span>
+            <span>รวมทั้งหมด</span>
             <span>{totalPriceNumber.toFixed(2)} บาท</span>
           </div>
         </div>
@@ -385,7 +389,7 @@ const Payment = () => {
             onChange={(e) => setPaymentMethod(e.target.value)}
             style={{ accentColor: "#22c55e", transform: "scale(1.2)" }}
           />
-          <span style={{ fontWeight: "500" }}>💵 เงินสด</span>
+          <span style={{ fontWeight: "500" }}>เงินสด</span>
         </label>
 
         <label
@@ -407,7 +411,7 @@ const Payment = () => {
             onChange={(e) => setPaymentMethod(e.target.value)}
             style={{ accentColor: "#3b82f6", transform: "scale(1.2)" }}
           />
-          <span style={{ fontWeight: "500" }}>📱 QR Code</span>
+          <span style={{ fontWeight: "500" }}>QR Code</span>
         </label>
       </div>
 
@@ -417,18 +421,18 @@ const Payment = () => {
           className="mt-4 p-4 shadow-sm border rounded-3"
           style={{ backgroundColor: "#f9fafb" }}
         >
-          <h5
-            className="mb-3 text-center"
-            style={{ fontWeight: "600", color: "#111827" }}
-          >
-            💵 ชำระด้วยเงินสด
-          </h5>
-
           {/* ช่องกรอกจำนวนเงิน */}
           <div className="mb-3">
             <label
               className="form-label"
-              style={{ fontWeight: "500", color: "#374151" }}
+              style={{
+                fontSize: "20px",
+                fontWeight: "500",
+                color: "black",
+                display: "block",
+                textAlign: "left",
+                marginBottom: "6px",
+              }}
             >
               จำนวนเงินที่ลูกค้าชำระ:
             </label>
@@ -450,17 +454,17 @@ const Payment = () => {
           <button
             onClick={handlePayment}
             disabled={loading}
-            className="btn w-100 mb-3"
+            className="w-100 py-2"
             style={{
-              backgroundColor: "#3b82f6",
-              color: "white",
+              backgroundColor: "#4A70A9",
+              color: "EFECE3", // override ให้ตัวหนังสือเป็นดำ
               borderRadius: "8px",
               fontSize: "16px",
-              height: "45px",
-              transition: "all 0.2s ease",
+              height: "50px",
+              transition: "0.2s",
             }}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "#2563eb")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "#3b82f6")}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#8FABD4")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#4A70A9")}
           >
             {loading ? "กำลังประมวลผล..." : "คำนวณเงินทอน"}
           </button>
@@ -468,53 +472,41 @@ const Payment = () => {
           {/* แสดงผลลัพธ์หลังคำนวณ */}
           {result && result.success && (
             <div
-              className="text-center py-3 rounded-3"
+              className="py-3 rounded-3"
               style={{
                 backgroundColor: "#ecfdf5",
                 border: "1px solid #d1fae5",
                 marginTop: "8px",
+                padding: "12px 16px",
               }}
             >
-              <p className="mb-1" style={{ fontWeight: "500" }}>
-                💰 ลูกค้าชำระ:{" "}
-                <span className="fw-bold">{result.customer_paid}</span> บาท
-              </p>
-              <p
-                className="mb-0"
-                style={{ color: "#059669", fontWeight: "600" }}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "4px",
+                  fontWeight: "500",
+                }}
               >
-                เงินทอน: {result.change} บาท
-              </p>
-            </div>
-          )}
+                <span>ลูกค้าชำระ</span>
+                <span style={{ fontWeight: "600" }}>
+                  {result.customer_paid} บาท
+                </span>
+              </div>
 
-          {/* ปุ่มบันทึกข้อมูล */}
-          <button
-            onClick={handleUpdatePayment}
-            disabled={loading}
-            className="btn btn-success btn-lg w-100 mt-3"
-            style={{
-              color: "black",
-              borderRadius: "8px",
-              fontSize: "18px",
-              height: "50px",
-              fontWeight: "500",
-            }}
-          >
-            {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-          </button>
-
-          {/* ถ้ามี error */}
-          {result && !result.success && (
-            <div
-              className="alert alert-danger mt-3 text-center py-2"
-              role="alert"
-              style={{
-                borderRadius: "8px",
-                fontSize: "14px",
-              }}
-            >
-              ⚠️ {result.message}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  color: "#059669",
+                  fontWeight: "600",
+                }}
+              >
+                <span>เงินทอน</span>
+                <span>{result.change} บาท</span>
+              </div>
             </div>
           )}
         </div>
@@ -526,17 +518,6 @@ const Payment = () => {
           className="mt-4 p-4 shadow-sm border rounded-3 text-center"
           style={{ backgroundColor: "#f9fafb" }}
         >
-          {/* หัวข้อ */}
-          <h5
-            className="mb-3"
-            style={{
-              fontWeight: "600",
-              color: "#4b5563",
-            }}
-          >
-            📱 สแกนเพื่อชำระเงิน
-          </h5>
-
           {/* รูป QR Code */}
           <div
             className="d-flex justify-content-center align-items-center"
@@ -571,7 +552,7 @@ const Payment = () => {
               color: "#111827",
             }}
           >
-            💰 ยอดชำระ:{" "}
+            ยอดชำระ:{" "}
             <span style={{ color: "#059669", fontWeight: "700" }}>
               {totalPriceNumber.toFixed(2)} บาท
             </span>
@@ -582,21 +563,24 @@ const Payment = () => {
             onClick={handlePrint}
             className="btn w-100 mb-2"
             style={{
-              backgroundColor: "#a855f7",
-              color: "black",
+              backgroundColor: "#44444E",
+              color: "#D3DAD9",
               borderRadius: "8px",
               fontSize: "16px",
               height: "45px",
+              fontWeight: "500",
+              gap: "8px",
               transition: "all 0.2s ease",
             }}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "#9333ea")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "#a855f7")}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#c7382b")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#E14434")}
           >
-            🖨 พิมพ์ใบเสร็จ
+            <i class="bi bi-printer-fill" style={{ marginRight: "8px" }}></i>
+            พิมพ์ใบเสร็จ
           </button>
 
           {/* ปุ่มบันทึกข้อมูล */}
-          <button
+          {/* <button
             onClick={handleUpdatePayment}
             disabled={loading}
             className="btn btn-success btn-lg w-100"
@@ -609,7 +593,7 @@ const Payment = () => {
             }}
           >
             {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-          </button>
+          </button> */}
 
           {/* Loading indicator (ถ้ามี) */}
           {loading && (
@@ -620,9 +604,22 @@ const Payment = () => {
         </div>
       )}
 
-      {result && !result.success && (
-        <p className="text-red-600 mt-3">{result.message}</p>
-      )}
+      <button
+        onClick={handleUpdatePayment}
+        disabled={loading}
+        className="btn-lg w-100 mb-2"
+        style={{
+          backgroundColor: "#5EABD6",
+          color: "#16476A", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
+          borderRadius: "10px",
+          fontSize: "18px",
+          height: "50px",
+          width: "70%",
+          marginTop: "1rem",
+        }}
+      >
+        {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+      </button>
     </div>
   );
 };

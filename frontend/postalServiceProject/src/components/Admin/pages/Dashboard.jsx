@@ -93,54 +93,59 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 px-6 py-4 font-sans max-w-[1400px] mx-auto">
       {/* Header */}
-      <h1 className="text-3xl font-bold text-gray-800 text-center">
+      <h1 className="text-3xl font-bold text-gray-800 text-center mb-4">
         Dashboard Admin
       </h1>
 
-      {/* เลือกช่วงเวลา */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "nowrap",
-          justifyContent: "center",
-          alignItems: "center",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <DatePicker
-          selected={selectedDate}
-          onChange={(date) => setSelectedDate(date)}
-          placeholderText="เลือกวัน/สัปดาห์/เดือน"
-          dateFormat={periodType === "monthly" ? "MM/yyyy" : "yyyy-MM-dd"}
-          showMonthYearPicker={periodType === "monthly"}
-          isClearable
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 w-48"
+      <div>
+        {/* เลือกช่วงเวลา */}
+        <div
           style={{
-            marginRight: "16px", // ช่องว่างด้านขวา
-          }}
-        />
-
-        <select
-          value={periodType}
-          onChange={(e) => setPeriodType(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 w-40"
-          style={{
-            marginRight: "16px", // ช่องว่างด้านขวา
-            marginLeft: "16px",
+            display: "flex",
+            flexWrap: "nowrap",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: "1.5rem",
           }}
         >
-          <option value="daily">รายวัน</option>
-          <option value="weekly">รายสัปดาห์</option>
-          <option value="monthly">รายเดือน</option>
-        </select>
+          <select
+            value={periodType}
+            onChange={(e) => setPeriodType(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 w-40"
+            style={{
+              marginRight: "10px",
+            }}
+          >
+            <option value="daily">รายวัน</option>
+            <option value="weekly">รายสัปดาห์</option>
+            <option value="monthly">รายเดือน</option>
+          </select>
 
-        <button
-          onClick={filterByDate}
-          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded shadow-md transition-colors w-32"
-          style={{ backgroundColor: "#E14434", color: "white" }}
-        >
-          ค้นหา
-        </button>
+          <DatePicker
+            selected={selectedDate}
+            onChange={(date) => setSelectedDate(date)}
+            placeholderText="เลือกวัน/สัปดาห์/เดือน"
+            dateFormat={periodType === "monthly" ? "MM/yyyy" : "yyyy-MM-dd"}
+            showMonthYearPicker={periodType === "monthly"}
+            isClearable
+            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 w-48"
+            style={{
+              marginRight: "10px", // ช่องว่างด้านขวา
+            }}
+          />
+
+          <button
+            onClick={filterByDate}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded shadow-md transition-colors w-32"
+            style={{
+              backgroundColor: "#E14434",
+              color: "white",
+              marginLeft: "10px",
+            }}
+          >
+            ค้นหา
+          </button>
+        </div>
       </div>
 
       {/* สถิติพัสดุ */}

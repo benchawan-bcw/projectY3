@@ -27,17 +27,17 @@ function Tracking() {
       }}
     >
       {/* 🔹 หัวข้อ */}
-      <h2
+      <h1
         style={{
-          fontSize: "26px",
           fontWeight: "700",
           marginBottom: "24px",
           textAlign: "center",
-          color: "#d71a28",
+          color: "#E14434",
         }}
       >
-        📦 ตรวจสอบสถานะพัสดุ (Thailand Post)
-      </h2>
+        <i class="bi bi-truck" style={{ marginRight: "6px" }}></i>
+        ตรวจสอบสถานะพัสดุ
+      </h1>
 
       {/* 🔹 กล่องกรอกข้อมูล */}
       <div
@@ -71,7 +71,7 @@ function Tracking() {
           onClick={handleTrack}
           style={{
             padding: "10px 18px",
-            backgroundColor: "#d71a28",
+            backgroundColor: "#E14434",
             color: "white",
             fontWeight: "600",
             border: "none",
@@ -82,7 +82,7 @@ function Tracking() {
           onMouseOver={(e) => (e.target.style.backgroundColor = "#b81823")}
           onMouseOut={(e) => (e.target.style.backgroundColor = "#d71a28")}
         >
-          🔍 ตรวจสอบ
+          ตรวจสอบ
         </button>
       </div>
 
@@ -91,7 +91,7 @@ function Tracking() {
         <p
           style={{ textAlign: "center", color: "#6b7280", fontStyle: "italic" }}
         >
-          ⏳ กำลังตรวจสอบสถานะพัสดุ...
+          กำลังตรวจสอบสถานะพัสดุ...
         </p>
       )}
 
@@ -117,7 +117,7 @@ function Tracking() {
                 fontWeight: "600",
               }}
             >
-              📨 สถานะล่าสุดของพัสดุ
+              สถานะล่าสุดของพัสดุ
             </h3>
             {result
               .slice()
@@ -145,8 +145,14 @@ function Tracking() {
                     (e.currentTarget.style.backgroundColor = "#f3f4f6")
                   }
                 >
-                  <p style={{ margin: 0, fontWeight: "600", color: "#111827" }}>
-                    ✅ {item.status_description}
+                  <p
+                    style={{
+                      marginBottom: "5px",
+                      fontWeight: "600",
+                      color: "#111827",
+                    }}
+                  >
+                    {item.status_description}
                   </p>
                   <p
                     style={{
@@ -155,7 +161,16 @@ function Tracking() {
                       color: "#6b7280",
                     }}
                   >
-                    🕒 {item.status_date.split("+")[0]} — 📍 {item.location}
+                    <i
+                      class="bi bi-clock-fill"
+                      style={{ marginRight: "6px" }}
+                    ></i>
+                    {item.status_date.split("+")[0]}
+                    <i
+                      class="bi bi-geo-fill"
+                      style={{ margin: "0 6px 0 10px" }}
+                    ></i>
+                    {item.location}
                   </p>
                 </div>
               ))}
@@ -163,7 +178,7 @@ function Tracking() {
         ) : (
           !loading && (
             <p style={{ textAlign: "center", color: "#9ca3af" }}>
-              🔎 กรุณากรอกเลขพัสดุเพื่อเริ่มตรวจสอบ
+              กรุณากรอกเลขพัสดุเพื่อเริ่มตรวจสอบ
             </p>
           )
         )}

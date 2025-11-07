@@ -1,4 +1,6 @@
 const Parcels = require("../models/parcels");
+const fs = require("fs");
+const path = require("path");
 
 exports.getParcels = async (req, res) => {
   try {
@@ -36,12 +38,6 @@ exports.getTrackByTrackingNumber = async (req, res) => {
   }
 
   try {
-    // 🔹 ตรวจสอบว่ามีพัสดุในระบบเราหรือไม่ mongoDB
-    // const parcel = await Parcels.findOne({ tracking_number: trackingNumber });
-    // if (!parcel) {
-    //   return res.status(404).json({ message: "ไม่พบข้อมูลพัสดุในระบบของเรา" });
-    // }
-
     // ขอ Token
     const tokenRes = await fetch(
       "https://trackapi.thailandpost.co.th/post/api/v1/authenticate/token",
@@ -75,17 +71,27 @@ exports.getTrackByTrackingNumber = async (req, res) => {
 
     const data = await trackRes.json();
 
-    // console.log("🔍 Thai Post API response:", JSON.stringify(data, null, 2));
-    // if (data.response.items[trackingNumber]) {
-    //   res.json(data.response.items[trackingNumber]);
-    // } else {
-    //   console.error("❌ ไม่พบข้อมูลพัสดุจาก Thai Post API");
-    //   res.status(404).json({ message: "ไม่พบข้อมูลพัสดุจากไปรษณีย์ไทย" });
-    // }
-
     res.json(data.response.items[trackingNumber]);
   } catch (err) {
     console.error("เกิดข้อผิดพลาด:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getShippingRate = async (req, res) => {
+  try {
+    const filePath = path.join(__dirname, "../config/emsCost.json");
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "ไม่พบไฟล์ emsCost.json" });
+    }
+
+    const jsonData = fs.readFileSync(filePath, "utf8");
+    const rates = JSON.parse(jsonData);
+
+    res.json(rates);
+  } catch (error) {
+    console.error("Error reading shippingRates.json:", error);
+    res.status(500).json({ message: "ไม่สามารถอ่านไฟล์ข้อมูลได้" });
   }
 };

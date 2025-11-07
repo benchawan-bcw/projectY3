@@ -44,9 +44,14 @@ const RegisterParcel = () => {
         alert("ยังไม่มีเลขพัสดุ");
         return;
       }
+      setTimeout(() => setIsScanned(false), 1000);
 
       console.log("📦 สแกนพัสดุแล้ว:", trackingNumber);
     }
+  };
+
+  const handleReset = () => {
+    setTrackingNumber(""); // ล้างเลขพัสดุ
   };
 
   // ค่าส่ง
@@ -139,10 +144,40 @@ const RegisterParcel = () => {
     });
   };
 
-  const DropdownCategory = ({ categoryName, categoryData, categoryKey }) => (
+  const DropdownCategory = ({
+    categoryName,
+    categoryData,
+    categoryKey,
+    textColor = "#1A2A4F",
+    size = "base",
+  }) => (
     <Dropdown className="mb-2">
-      <Dropdown.Toggle variant="secondary">{categoryName}</Dropdown.Toggle>
-      <Dropdown.Menu>
+      <Dropdown.Toggle
+        style={{
+          background: "#FEFBC7",
+          color: textColor,
+          width: "100%",
+          fontWeight: "600",
+          fontSize:
+            size === "sm" ? "0.875rem" : size === "lg" ? "1.125rem" : "1rem",
+          borderRadius: "12px",
+          padding: "10px 14px",
+          boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+          transition: "all 0.3s ease",
+        }}
+        className="hover:scale-105"
+      >
+        {categoryName}
+      </Dropdown.Toggle>
+      <Dropdown.Menu
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: "12px",
+          border: "1px solid #E14434",
+          boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
+          padding: "6px 0",
+        }}
+      >
         {categoryData.map((item, idx) => {
           const names = Array.isArray(item.name) ? item.name : [item.name];
           return names.map((name) => (
@@ -151,6 +186,18 @@ const RegisterParcel = () => {
               onClick={() =>
                 handleAddItem(categoryKey, { name, price: item.price })
               }
+              style={{
+                color: textColor,
+                fontSize:
+                  size === "sm"
+                    ? "0.875rem"
+                    : size === "lg"
+                    ? "1.125rem"
+                    : "1rem",
+                padding: "10px 16px",
+                transition: "all 0.2s ease",
+              }}
+              className="hover:bg-[#FEFBC7] hover:text-[#E14434]"
             >
               {name} ({item.price} บาท)
             </Dropdown.Item>
@@ -319,6 +366,7 @@ const RegisterParcel = () => {
           <input
             type="text"
             value={trackingNumber}
+            readOnly
             onChange={(e) => setTrackingNumber(e.target.value)}
             onKeyDown={handleScan}
             placeholder="แสกนหรือพิมพ์เลขพัสดุ"
@@ -326,7 +374,17 @@ const RegisterParcel = () => {
           />
           <button
             type="button"
-            className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+            onClick={handleReset}
+            style={{
+              marginTop: "1rem",
+              backgroundColor: "#dc2626",
+              color: "white",
+              border: "none",
+              padding: "0.5rem 1rem",
+              borderRadius: "5px",
+              cursor: "pointer",
+              width: "30%",
+            }}
           >
             ยกเลิก
           </button>
@@ -447,18 +505,19 @@ const RegisterParcel = () => {
               <button
                 type="button"
                 onClick={handleCalculateShipping}
-                className="btn btn-success w-100 py-2"
+                className="w-100 py-2"
                 style={{
-                  color: "black", // override ให้ตัวหนังสือเป็นดำ
+                  backgroundColor: "#4A70A9",
+                  color: "EFECE3", // override ให้ตัวหนังสือเป็นดำ
                   borderRadius: "8px",
                   fontSize: "14px",
                   height: "50px",
                   transition: "0.2s",
                 }}
                 onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#16a34a")
+                  (e.target.style.backgroundColor = "#8FABD4")
                 }
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#22c55e")}
+                onMouseOut={(e) => (e.target.style.backgroundColor = "#4A70A9")}
               >
                 คำนวณค่าส่ง EMS
               </button>
@@ -485,50 +544,72 @@ const RegisterParcel = () => {
         </div>
 
         {/* 🔧 เพิ่มอุปกรณ์ */}
-        <div className="w-full bg-[#FFFDF5] rounded-xl shadow-sm p-5 border border-gray-200">
-          <h2 className="text-lg font-semibold text-[#E14434] mb-4">
-            🧰 เลือกอุปกรณ์เพิ่มเติม
+        <div className="w-full bg-[#fff] rounded-2xl p-6 shadow-md">
+          <h2 className="text-xl font-semibold text-[#E14434] mb-6 flex items-center gap-2">
+            <i className="bi bi-tools"></i>
+            เลือกอุปกรณ์เพิ่มเติม
           </h2>
 
           {/* ส่วนเลือกอุปกรณ์ */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="bg-ts-transparent rounded-xl p-5  hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <DropdownCategory
-                categoryName="📦 กล่อง"
+                categoryName={
+                  <span className="flex items-center gap-2">
+                    <i className="bi bi-box-seam text-[#E14434]"></i> กล่อง
+                  </span>
+                }
                 categoryData={boxes}
                 categoryKey="boxes"
+                size="lg"
               />
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+            <div className="bg-transparent rounded-xl p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <DropdownCategory
-                categoryName="✉️ ซอง"
+                categoryName={
+                  <span className="flex items-center gap-2">
+                    <i className="bi bi-envelope-paper text-[#E14434]"></i> ซอง
+                  </span>
+                }
                 categoryData={envelopes}
                 categoryKey="envelopes"
+                size="lg"
               />
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+            <div className="bg-transparent rounded-xl p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <DropdownCategory
-                categoryName="🧵 รัดกล่อง"
+                categoryName={
+                  <span className="flex items-center gap-2">
+                    <i className="bi bi-link-45deg text-[#E14434]"></i> รัดกล่อง
+                  </span>
+                }
                 categoryData={ties}
                 categoryKey="ties"
+                size="lg"
               />
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
+            <div className="bg-transparent rounded-xl p-5  hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <DropdownCategory
-                categoryName="💨 บับเบิ้ล"
+                categoryName={
+                  <span className="flex items-center gap-2">
+                    <i className="bi bi-bag-dash text-[#E14434]"></i> บับเบิ้ล
+                  </span>
+                }
                 categoryData={bubble_wrap}
                 categoryKey="bubble_wrap"
+                size="lg"
               />
             </div>
           </div>
 
           {/* ส่วนแสดงอุปกรณ์ที่เลือก */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h3 className="text-md font-semibold text-gray-800 mb-3">
-              🧾 อุปกรณ์ที่เลือก
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm mt-4">
+            <h3 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <i className="bi bi-receipt-cutoff text-[#E14434]"></i>
+              อุปกรณ์ที่เลือก
             </h3>
 
             {selectedEquipment.length === 0 ? (
@@ -556,7 +637,8 @@ const RegisterParcel = () => {
 
             <div className="border-t border-gray-200 mt-4 pt-3 text-right">
               <p className="font-semibold text-gray-800">
-                💰 ราคารวมอุปกรณ์:{" "}
+                <i className="bi bi-cash-stack text-[#E14434]"></i>
+                ราคารวมอุปกรณ์:{" "}
                 <span className="text-[#E14434]">{totalEquipment}</span> บาท
               </p>
             </div>
@@ -566,12 +648,14 @@ const RegisterParcel = () => {
         <button
           type="submit"
           disabled={loading}
-          className="btn btn-success btn-lg w-100 mb-2"
+          className="btn-lg w-100 mb-2"
           style={{
-            color: "black", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
-            borderRadius: "5px",
+            backgroundColor: "#5EABD6",
+            color: "#16476A", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
+            borderRadius: "10px",
             fontSize: "18px",
             height: "50px",
+            width: "70%",
           }}
         >
           {loading ? "กำลังลงบันทึก..." : "บันทึกพัสดุ"}
@@ -583,12 +667,14 @@ const RegisterParcel = () => {
       <button
         type="button"
         onClick={goToPayment}
-        className="btn btn-success btn-lg w-100 mb-2"
+        className="btn-lg w-100 mb-2"
         style={{
-          color: "black", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
-          borderRadius: "5px",
+          backgroundColor: "#E62727",
+          color: "#DCDCDC", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
+          borderRadius: "10px",
           fontSize: "18px",
           height: "50px",
+          width: "0%",
         }}
       >
         ใบเสร็จชำระเงิน

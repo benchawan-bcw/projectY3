@@ -84,25 +84,20 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
         <table className="w-full table-auto rounded-lg text-sm border-none mx-auto">
           <thead style={{ backgroundColor: "#E14434", color: "white" }}>
             <tr>
-              <th className="px-4 py-3 text-left font-semibold w-32">
+              <th
+                className="px-4 py-3"
+                style={{ width: "10rem", padding: "10px" }}
+              >
                 Tracking No.
               </th>
-              <th className="px-4 py-3 text-left font-semibold w-48">ผู้ส่ง</th>
-              <th className="px-4 py-3 text-left font-semibold w-48">ผู้รับ</th>
-              <th className="px-4 py-3 text-left font-semibold w-64">
-                ที่อยู่
-              </th>
-              <th className="px-4 py-3 text-left font-semibold w-26">
-                น้ำหนัก
-              </th>
-              <th className="px-4 py-3 text-left font-semibold w-32">บริการ</th>
-              <th className="px-4 py-3 text-left font-semibold w-40">สถานะ</th>
-              <th className="px-4 py-3 text-left font-semibold w-48">
-                แก้ไขเมื่อ
-              </th>
-              <th className="px-4 py-3 text-center font-semibold w-24">
-                จัดการ
-              </th>
+              <th style={{ width: "14rem", padding: "10px" }}>ผู้ส่ง</th>
+              <th style={{ width: "14rem", padding: "10px" }}>ผู้รับ</th>
+              <th style={{ width: "20rem", padding: "10px" }}>ที่อยู่</th>
+              <th style={{ width: "8rem", padding: "10px" }}>น้ำหนัก</th>
+              <th style={{ width: "5rem", padding: "10px" }}>บริการ</th>
+              <th style={{ width: "10rem", padding: "10px" }}>สถานะ</th>
+              <th style={{ width: "14rem", padding: "10px" }}>แก้ไขเมื่อ</th>
+              <th style={{ width: "8rem", padding: "10px" }}>จัดการ</th>
             </tr>
           </thead>
 
@@ -129,7 +124,7 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                     {parcel.service_type}
                   </td>
                   <td className="px-4 py-3 font-semibold text-[#E14434]">
-                    {parcel.status}
+                    {parcel.parcel_status}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {new Date(parcel.update_at).toLocaleString("th-TH")}
@@ -216,10 +211,10 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-2xl font-semibold text-[#E14434] mb-6 text-center">
-                ✏️ แก้ไขข้อมูลพัสดุ
+                แก้ไขข้อมูลพัสดุ
               </h3>
 
-              <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-5">
+              <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
                 {/* Tracking No. เต็มแถว */}
                 <div className="col-span-2">
                   <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -273,7 +268,7 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
 
                 {/* ที่อยู่ */}
                 <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                  <label className="block mb-1 text-sm font-medium text-gray-700 ">
                     ที่อยู่
                   </label>
                   <input
@@ -314,7 +309,7 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                       borderRadius: "10px",
                     }}
                   >
-                    💾 บันทึก
+                    บันทึก
                   </button>
                   <button
                     type="button"
@@ -324,7 +319,7 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                       borderRadius: "10px",
                     }}
                   >
-                    ❌ ยกเลิก
+                    ยกเลิก
                   </button>
                 </div>
               </form>

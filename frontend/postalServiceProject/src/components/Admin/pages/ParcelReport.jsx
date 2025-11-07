@@ -24,6 +24,7 @@ const ParcelReport = () => {
   const [report, setReport] = useState([]);
 
   // ดึงข้อมูลพัสดุทั้งหมด
+
   useEffect(() => {
     const fetchParcels = async () => {
       try {
@@ -33,13 +34,19 @@ const ParcelReport = () => {
             auth: { username: "admin", password: "bands" },
           }
         );
-        if (Array.isArray(res.data)) setParcels(res.data);
-        else setParcels([]);
+
+        if (Array.isArray(res.data)) {
+          console.log("📦 Parcels Data:", res.data); // ดูข้อมูลจริงจาก API
+          setParcels(res.data);
+        } else {
+          setParcels([]);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("❌ Error fetching parcels:", err);
         setParcels([]);
       }
     };
+
     fetchParcels();
   }, []);
 
@@ -70,7 +77,7 @@ const ParcelReport = () => {
       if (!grouped[key])
         grouped[key] = { sender: p.sender, totalParcels: 0, totalPrice: 0 };
       grouped[key].totalParcels += 1;
-      grouped[key].totalPrice += Number(p.price || 0);
+      grouped[key].totalPrice += Number(p.total_price || 0); // ✅ ใช้ total_price
     });
 
     setReport(Object.values(grouped));
@@ -81,21 +88,20 @@ const ParcelReport = () => {
       style={{
         padding: "32px",
         fontFamily: "Prompt, sans-serif",
-        backgroundColor: "#f9fafb",
         minHeight: "100vh",
       }}
     >
-      <h2
+      <h1
         style={{
-          fontSize: "26px",
-          fontWeight: "700",
-          marginBottom: "20px",
+          fontSize: "24px",
+          fontWeight: "bold",
+          marginBottom: "24px",
           textAlign: "center",
-          color: "#2563eb",
+          color: "#E14434",
         }}
       >
-        📦 รายงานสถิติพัสดุ (Parcel Report)
-      </h2>
+        รายงานสถิติพัสดุ
+      </h1>
 
       {/* 🔹 ตัวเลือกช่วงเวลา */}
       <div
@@ -107,15 +113,6 @@ const ParcelReport = () => {
           marginBottom: "28px",
         }}
       >
-        <DatePicker
-          selected={selectedDate}
-          onChange={(date) => setSelectedDate(date)}
-          placeholderText="เลือกวัน / สัปดาห์ / เดือน"
-          dateFormat={periodType === "monthly" ? "MM/yyyy" : "yyyy-MM-dd"}
-          showMonthYearPicker={periodType === "monthly"}
-          className="border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-
         <select
           value={periodType}
           onChange={(e) => setPeriodType(e.target.value)}
@@ -135,13 +132,22 @@ const ParcelReport = () => {
           <option value="weekly">รายสัปดาห์</option>
           <option value="monthly">รายเดือน</option>
         </select>
+
+        <DatePicker
+          selected={selectedDate}
+          onChange={(date) => setSelectedDate(date)}
+          placeholderText="เลือกวัน / สัปดาห์ / เดือน"
+          dateFormat={periodType === "monthly" ? "MM/yyyy" : "yyyy-MM-dd"}
+          showMonthYearPicker={periodType === "monthly"}
+          className="border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
       </div>
 
       {/* 🔹 ตารางข้อมูล */}
       <div
         style={{
           backgroundColor: "#fff",
-          borderRadius: "12px",
+          borderRadius: "10px",
           boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
           overflow: "hidden",
           marginBottom: "32px",
@@ -156,7 +162,7 @@ const ParcelReport = () => {
         >
           <thead
             style={{
-              backgroundColor: "#2563eb",
+              backgroundColor: "#E14434",
               color: "white",
               textAlign: "center",
             }}
@@ -189,7 +195,9 @@ const ParcelReport = () => {
                   <td style={{ padding: "8px" }}>{i + 1}</td>
                   <td style={{ padding: "8px" }}>{r.sender}</td>
                   <td style={{ padding: "8px" }}>{r.totalParcels}</td>
-                  <td style={{ padding: "8px" }}>{r.totalPrice.toFixed(2)}</td>
+                  <td style={{ padding: "8px" }}>
+                    {r.totalPrice ? r.totalPrice.toFixed(2) : "0.00"}
+                  </td>
                 </tr>
               ))
             ) : (
@@ -224,11 +232,11 @@ const ParcelReport = () => {
               fontWeight: "600",
             }}
           >
-            📊 สรุปยอดพัสดุและค่าส่ง
+            สรุปยอดพัสดุและค่าส่ง
           </h3>
           <ResponsiveContainer width="100%" height={320}>
             <BarChart
-              data={report}
+              data={report} // ✅ ใช้ report
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
@@ -236,8 +244,8 @@ const ParcelReport = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="totalParcels" fill="#3b82f6" name="จำนวนพัสดุ" />
-              <Bar dataKey="totalPrice" fill="#10b981" name="ค่าส่งรวม" />
+              <Bar dataKey="totalParcels" fill="#f56253" name="จำนวนพัสดุ" />
+              <Bar dataKey="totalPrice" fill="#ffe596" name="ค่าส่งรวม" />
             </BarChart>
           </ResponsiveContainer>
         </div>

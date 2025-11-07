@@ -6,6 +6,7 @@ const {
   getParcels,
   getParcelsByTrackingNumber,
   getTrackByTrackingNumber,
+  getShippingRate,
 } = require("../controllers/customerController");
 
 connectDB();
@@ -13,5 +14,6 @@ connectDB();
 router.get("/parcels", getParcels);
 router.get("/parcels/:trackingNumber", getParcelsByTrackingNumber);
 router.get("/track/:trackingNumber", getTrackByTrackingNumber);
+router.get("/shippingRate", getShippingRate);
 
 module.exports = router;

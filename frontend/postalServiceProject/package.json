@@ -16,6 +16,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
     "jspdf": "^3.0.3",
+    "lucide-react": "^0.553.0",
     "react": "^19.1.1",
     "react-bootstrap": "^2.10.10",
     "react-datepicker": "^8.8.0",

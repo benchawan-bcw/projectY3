@@ -278,68 +278,64 @@ const Receipt = () => {
     >
       {/* หัวเรื่อง */}
       <h1
+        className="text-center mb-4"
         style={{
-          textAlign: "center",
-          marginBottom: "1rem",
-          color: "#2563eb",
           fontSize: "24px",
-          fontWeight: "700",
+          fontWeight: "bold",
+          marginBottom: "24px",
+          color: "#dc2626",
         }}
       >
-        🧾 ใบเสร็จรับเงินสินค้า
+        ใบเสร็จรับเงินสินค้า
       </h1>
 
       {/* ฟอร์มค้นหา */}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          flexDirection: "column",
+          alignItems: "stretch",
           gap: "10px",
-          marginBottom: "1.5rem",
+          maxWidth: "500px",
+          marginBottom: "10px",
         }}
       >
         <label
           style={{
-            fontWeight: "600",
             color: "#374151",
-            whiteSpace: "nowrap",
+            textAlign: "left",
           }}
         >
-          กรอกชื่อผู้ส่ง:
+          กรอกชื่อผู้ส่ง :
         </label>
+
         <input
           type="text"
           value={senderName}
           onChange={(e) => setSenderName(e.target.value)}
           placeholder="ชื่อผู้ส่ง"
           style={{
-            flex: 1,
-            padding: "8px 12px",
+            width: "100%",
+            padding: "10px 12px",
             borderRadius: "6px",
             border: "1px solid #d1d5db",
             outline: "none",
             transition: "0.3s",
+            fontSize: "15px",
           }}
           onFocus={(e) => (e.target.style.border = "1px solid #60a5fa")}
           onBlur={(e) => (e.target.style.border = "1px solid #d1d5db")}
         />
+
         <button
           onClick={fetchParcel}
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded shadow-md transition-colors w-32"
           style={{
-            backgroundColor: "#2563eb",
+            backgroundColor: "#E14434",
             color: "white",
-            border: "none",
-            borderRadius: "6px",
-            padding: "8px 16px",
-            cursor: "pointer",
-            fontWeight: "600",
-            transition: "0.3s",
           }}
-          onMouseEnter={(e) => (e.target.style.backgroundColor = "#1e40af")}
-          onMouseLeave={(e) => (e.target.style.backgroundColor = "#2563eb")}
         >
-          🔍 ค้นหา
+          ค้นหา
         </button>
       </div>
 
@@ -356,6 +352,7 @@ const Receipt = () => {
         >
           <h3
             style={{
+              fontSize: "20px",
               textAlign: "center",
               marginBottom: "0.75rem",
               color: "#374151",
@@ -364,6 +361,7 @@ const Receipt = () => {
           >
             รายชื่อผู้รับของ {senderName}
           </h3>
+
           <ul style={{ listStyleType: "none", padding: 0, margin: 0 }}>
             {parcels.map((p) => (
               <li
@@ -399,21 +397,22 @@ const Receipt = () => {
       <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
         <button
           onClick={handlePrint}
+          className="btn w-100 mb-2"
           style={{
-            backgroundColor: "#10b981",
-            color: "white",
-            border: "none",
+            backgroundColor: "#44444E",
+            color: "#D3DAD9",
             borderRadius: "8px",
-            padding: "10px 20px",
-            fontWeight: "600",
-            fontSize: "15px",
-            cursor: "pointer",
-            transition: "0.3s",
+            fontSize: "16px",
+            height: "45px",
+            fontWeight: "500",
+            gap: "8px",
+            transition: "all 0.2s ease",
           }}
-          onMouseEnter={(e) => (e.target.style.backgroundColor = "#059669")}
-          onMouseLeave={(e) => (e.target.style.backgroundColor = "#10b981")}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#c7382b")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#E14434")}
         >
-          🖨 พิมพ์ใบเสร็จ
+          <i class="bi bi-printer-fill" style={{ marginRight: "8px" }}></i>
+          พิมพ์ใบเสร็จ
         </button>
       </div>
     </div>
