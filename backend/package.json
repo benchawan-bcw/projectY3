@@ -16,6 +16,7 @@
     "qrcode": "^1.5.4",
     "react-bootstrap": "^2.10.10",
     "recharts": "^3.3.0",
+    "sinon": "^21.0.0",
     "uuid": "^13.0.0"
   },
   "name": "backend",
@@ -23,7 +24,6 @@
   "description": "",
   "main": "api.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "test": "mocha tests/**/*.test.js --exit",
     "start": "node server.js"
   },

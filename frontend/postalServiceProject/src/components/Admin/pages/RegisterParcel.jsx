@@ -366,7 +366,7 @@ const RegisterParcel = () => {
           <input
             type="text"
             value={trackingNumber}
-            readOnly
+            // readOnly
             onChange={(e) => setTrackingNumber(e.target.value)}
             onKeyDown={handleScan}
             placeholder="แสกนหรือพิมพ์เลขพัสดุ"

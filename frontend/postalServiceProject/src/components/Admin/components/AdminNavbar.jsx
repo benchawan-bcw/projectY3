@@ -9,6 +9,11 @@ const AdminNavbar = () => {
   const navItems = [
     { to: "/admin", label: "หน้าหลัก", icon: "bi-house" },
     {
+      to: "/admin/CheckParcel",
+      label: "ตรวจสอบสถานะพัสดุ",
+      icon: "bi-truck",
+    },
+    {
       to: "/admin/RegisterParcel",
       label: "ลงทะเบียนพัสดุใหม่",
       icon: "bi-box-seam",
@@ -32,7 +37,7 @@ const AdminNavbar = () => {
         fixed="top"
         className="py-2"
         style={{
-           backgroundColor: "#E14434",
+          backgroundColor: "#E14434",
         }}
       >
         <Container className="justify-content-around">
@@ -44,18 +49,18 @@ const AdminNavbar = () => {
               onMouseEnter={() => setHovered(index)}
               onMouseLeave={() => setHovered(null)}
               style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textDecoration: "none",
-              color: hovered === index ? "#E14434" : "#FEFBC7",
-              backgroundColor: hovered === index ? "#FEFBC7" : "transparent",
-              padding: "0.2rem 0.5rem",
-              borderRadius: "8px",
-              width: "100%",
-              textAlign: "center",
-            }}
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+                color: hovered === index ? "#E14434" : "#FEFBC7",
+                backgroundColor: hovered === index ? "#FEFBC7" : "transparent",
+                padding: "0.2rem 0.5rem",
+                borderRadius: "8px",
+                width: "100%",
+                textAlign: "center",
+              }}
             >
               {item.icon && <i className={`bi ${item.icon} fs-4`}></i>}
               <small>{item.label}</small>

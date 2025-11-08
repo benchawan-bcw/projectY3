@@ -68,8 +68,10 @@ const Receipt = () => {
     const zipcode = zipMatch ? zipMatch[0] : "-";
 
     // ดึงชื่อจังหวัด
-    const provinceMatch = address.match(/(?:จังหวัด|จ\.)\s*([ก-ฮ]{2,})/);
-    const province = provinceMatch ? provinceMatch[1] : "-";
+    const provinceMatch = address.match(/(?:จังหวัด|จ\.)\s*([ก-ฮ\s]{2,})/);
+    const province = provinceMatch
+      ? provinceMatch[1].trim().replace(/\s+/g, " ")
+      : "-";
 
     return { province, zipcode };
   };

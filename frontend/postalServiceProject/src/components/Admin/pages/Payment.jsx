@@ -16,14 +16,47 @@ const Payment = () => {
   useEffect(() => {
     const fetchParcels = async () => {
       try {
+        // ดึงพัสดุทั้งหมดจาก API
         const res = await axios.get(
           "http://localhost:4000/admin-ban-poolsub/getParcels",
           {
             auth: { username: "admin", password: "bands" },
           }
         );
+
         if (res.data && res.data.length > 0) {
-          setParcel(res.data[0]); // เอารายการล่าสุด (index 0)
+          // ดึงพัสดุล่าสุด
+          const latestParcel = res.data[0];
+          const latestSender = latestParcel.sender;
+          const latestDate = new Date(latestParcel.update_at).toDateString();
+
+          // กรองเอาพัสดุทั้งหมดของผู้ส่งล่าสุด
+          const parcelsOfLatestSender = res.data.filter(
+            (p) =>
+              p.sender === latestSender &&
+              new Date(p.update_at).toDateString() === latestDate
+          );
+
+          // รวมค่าอุปกรณ์ทั้งหมดและค่าส่ง
+          let totalShipping = 0;
+          const allEquipment = [];
+
+          parcelsOfLatestSender.forEach((p) => {
+            totalShipping += p.shipping_cost || 0; // รวมค่าส่ง
+            if (p.equipment && p.equipment.length > 0) {
+              allEquipment.push(...p.equipment); // รวมอุปกรณ์
+            }
+          });
+
+          // รวมข้อมูลเพื่อแสดง
+          const combinedData = {
+            sender: latestSender,
+            parcels: parcelsOfLatestSender,
+            equipment: allEquipment,
+            totalShipping,
+          };
+
+          setParcel(combinedData); // เก็บรวมทั้งหมดใน state
         } else {
           setError("ไม่พบข้อมูลพัสดุ");
         }
@@ -40,7 +73,7 @@ const Payment = () => {
 
   // ดึงข้อมูลจากพัสดุ
   const equipment = parcel?.equipment || [];
-  const shippingCost = parcel?.shipping_cost || 0;
+  const totalShipping = parcel?.totalShipping || 0;
 
   // คำนวณราคารวมอุปกรณ์
   const totalEquipmentPrice = equipment.reduce(
@@ -49,9 +82,7 @@ const Payment = () => {
   );
 
   // คำนวณราคารวมทั้งหมด (รวมค่าส่ง)
-  const shippingCostNumber =
-    typeof shippingCost === "number" ? shippingCost : shippingCost.total || 0;
-  const totalPriceNumber = totalEquipmentPrice + shippingCostNumber;
+  const totalPriceNumber = totalEquipmentPrice + totalShipping;
 
   const handleUpdatePayment = async () => {
     // ตรวจสอบว่าลูกค้าจ่ายครบหรือยัง
@@ -347,7 +378,7 @@ const Payment = () => {
           <div className="flex justify-between">
             <span>ค่าส่ง</span>
             <span style={{ fontWeight: "500" }}>
-              {shippingCostNumber.toFixed(2)} บาท
+              {totalPriceNumber.toFixed(2)} บาท
             </span>
           </div>
 
@@ -618,7 +649,7 @@ const Payment = () => {
           marginTop: "1rem",
         }}
       >
-        {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+        {loading ? "กำลังบันทึก..." : "พิมใบเสร็จ"}
       </button>
     </div>
   );

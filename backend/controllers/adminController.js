@@ -202,6 +202,10 @@ exports.calculateEms = async (req, res) => {
     const { weight, postcode, packagingCost } = req.body;
     // ตรวจสอบพื้นที่เกาะจากรหัสไปรษณีย์
 
+     if (!/^\d{5}$/.test(postcode)) {
+      return res.status(400).json({ success: false, error: "Invalid postcode" });
+    }
+
     const isIsland = checkIsIsland(postcode);
     const totalCost = calculateEmsCost(weight, isIsland, packagingCost);
 
@@ -214,7 +218,7 @@ exports.calculateEms = async (req, res) => {
       totalCost,
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

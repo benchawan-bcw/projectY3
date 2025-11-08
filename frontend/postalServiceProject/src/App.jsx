@@ -11,6 +11,7 @@ import Receipt from "./components/Admin/pages/Receipt.jsx";
 import RegisterParcel from "./components/Admin/pages/RegisterParcel.jsx";
 import ParcelReport from "./components/Admin/pages/ParcelReport.jsx";
 import Payment from "./components/Admin/pages/Payment.jsx";
+import CheckParcel from "./components/Admin/pages/CheckParcel.jsx";
 
 // User pages
 import UserLayout from "./components/User/UserLayout.jsx";
@@ -21,7 +22,7 @@ function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/user" />} />
+        <Route path="/" element={<Navigate to="/admin" />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -30,6 +31,7 @@ function App() {
           <Route path="RegisterParcel" element={<RegisterParcel />} />
           <Route path="ParcelReport" element={<ParcelReport />} />
           <Route path="Payment" element={<Payment />} />
+          <Route path="CheckParcel" element={<CheckParcel />} />
         </Route>
 
         {/* User routes */}
