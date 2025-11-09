@@ -70,16 +70,17 @@ const Payment = () => {
   // รวมอุปกรณ์ทั้งหมดของผู้ส่งล่าสุด
   const allEquipment =
     parcelData?.parcels?.flatMap((p) => p.equipment || []) || [];
-  const totalShipping =
-    parcelData?.parcels?.reduce((sum, p) => sum + (p.shipping_cost || 0), 0) ||
-    0;
   const totalEquipmentPrice = allEquipment.reduce(
     (sum, item) => sum + (item.price || 0),
     0
   );
 
+  const totalShipping =
+    parcelData?.parcels?.reduce((sum, p) => sum + (p.shipping_cost || 0), 0) ||
+    0;
+
   // ราคาทั้งหมดรวมค่าส่ง
-  const totalPriceNumber = parcelData?.netPrice || 0;
+  const totalPriceNumber = totalEquipmentPrice + totalShipping;
 
   // QR
   useEffect(() => {
@@ -147,8 +148,35 @@ const Payment = () => {
     }
   };
 
-  const handleUpdatePayment = async () => {
-    // ตรวจสอบว่าลูกค้าจ่ายครบหรือยัง
+  // ฟังก์ชันช่วยดึงราคาของอุปกรณ์ตามชื่อ
+  function getEquipmentPrice(equipment, keyword) {
+    if (!equipment || equipment.length === 0) return 0;
+
+    // รวมราคาทุกชิ้นที่ชื่อมีคำว่า keyword อยู่
+    const total = equipment
+      .filter((e) => e.name.includes(keyword))
+      .reduce((sum, e) => sum + (e.price || 0) * (e.quantity || 1), 0);
+
+    return total;
+  }
+
+  const extractAddressData = (address) => {
+    if (!address) return { province: "-", zipcode: "-" };
+
+    // ดึงรหัสไปรษณีย์
+    const zipMatch = address.match(/\d{5}$/);
+    const zipcode = zipMatch ? zipMatch[0] : "-";
+
+    // ดึงชื่อจังหวัด
+    const provinceMatch = address.match(/(?:จังหวัด|จ\.)\s*([ก-ฮ\s]{2,})/);
+    const province = provinceMatch
+      ? provinceMatch[1].trim().replace(/\s+/g, " ")
+      : "-";
+
+    return { province, zipcode };
+  };
+
+  const handleUpdatePayment = async (paperSize = "58mm") => {
     if (paymentMethod === "cash" && Number(customerPaid) < totalPriceNumber) {
       return;
     }
@@ -157,26 +185,342 @@ const Payment = () => {
     setError(null);
 
     try {
-      const parcelIds = parcelData.parcels.map((p) => p._id);
+      // ส่ง _id ของแต่ละพัสดุและราคาของมัน
+      const parcelsToUpdate = parcelData.parcels.map((p) => ({
+        id: p._id,
+        total_price: p.totalPrice, // ราคาของพัสดุนี้
+      }));
 
       const res = await axios.put(
         `http://localhost:4000/admin-ban-poolsub/updatePayment`,
         {
-          parcelIds,
-          total_price: totalPriceNumber, // หรือส่งแยก p.totalPrice ถ้าต้องการ
+          parcels: parcelsToUpdate,
           net_price: parcelData.netPrice,
           payment_method: paymentMethod,
           customer_paid:
-            paymentMethod === "cash" ? Number(customerPaid) : totalPriceNumber,
+            paymentMethod === "cash"
+              ? Number(customerPaid)
+              : parcelData.netPrice,
         },
         { auth: { username: "admin", password: "bands" } }
       );
 
       console.log(res.data);
       alert("บันทึกข้อมูลการชำระเงินเรียบร้อยแล้ว");
+
+      // ✅ เรียกฟังก์ชันพิมพ์ใบเสร็จหลังอัปเดตสำเร็จ
+      if (parcelData.parcels.length > 0) {
+        const today = new Date().toLocaleDateString();
+        const time = new Date().toLocaleTimeString();
+
+        const printWindow = window.open("", "_blank");
+
+        const fontBase = paperSize === "58mm" ? "6px" : "13px";
+        const fontHeader = paperSize === "58mm" ? "7px" : "17px";
+        const fontFooter = paperSize === "58mm" ? "4px" : "12px";
+
+        printWindow.document.write(`
+        <html>
+          <head>
+            <title>ใบเสร็จรับเงินสินค้า</title>
+            <style>
+          body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
+          h3 { font-size: ${fontHeader}; }
+          .footer { font-size: ${fontFooter}; }
+
+          @page { size: auto; margin: 0; }
+        
+          .receipt {
+            width: 100%;
+            text-align: left;
+            font-size: 15px;
+          }
+          h3 {
+            text-align: center;
+            margin: 0;
+            padding: 0.5rem 0;
+            font-size: 16px;
+            border-bottom: 1px dashed #000;
+          }
+          .header {
+            text-align: center;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 16px;
+          }
+          .bill-number {
+          text-align: center;
+          font-weight: bold;
+          margin: 0.3rem 0;
+          }
+          .receipt {
+            margin: 0.3rem 0;
+          }
+          .receipt p {
+            margin: 0.3rem 0;
+            line-height: 1.1;
+          }
+          .line {
+            border-bottom: 1px dashed #000;
+            margin: 0.1rem 0;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 0.5rem;
+            page-break-after: always; /* 🧾 ตัดกระดาษหลังข้อความนี้ */
+            margin-bottom: 1rem;
+          }
+          .right-info {
+            text-align: right;
+            font-size: 15px;
+            margin-top: 0.5rem;
+            line-height: 1.2;
+          }
+        </style>
+          </head>
+          <body>
+            <<div class="receipt">
+          <div class="header">
+            <strong>บ้านไปรษณีย์พูลทรัพย์</strong><br/>
+            โทร. 035-913-183
+          </div>
+
+          <div class="bill-number">
+            <div>ใบรับเงิน</div>
+          </div>
+          <div class="section">
+          <div>${receiptNumber || "BILL-0001"} (เลขบิล)</div>
+            วันที่: ${today} &nbsp;&nbsp; เวลา: ${time}
+          </div>
+          <div class="line"></div>
+          `);
+
+        //แสดงชื่อผู้รับของผู้ส่งนั้น ๆ ทั้งหมด
+        parcelData.parcels.forEach((p) => {
+          const { province, zipcode } = extractAddressData(p.address);
+
+          printWindow.document.write(`
+            <div class="receipt">
+            <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
+            <div style="display: flex; justify-content: space-between;">
+              <span>${zipcode || "-"}</span>
+              <span>${province || "-"}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span><b>กล่อง / ซอง:</b></span>
+              <span>${
+                getEquipmentPrice(p.equipment, "กล่อง") ||
+                getEquipmentPrice(p.equipment, "ซอง")
+              }.-</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span><b>รัดกล่อง:</b></span>
+              <span>${getEquipmentPrice(p.equipment, "เชือก") || 0}.-</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span><b>บับเบิ้ล:</b></span>
+              <span>${getEquipmentPrice(p.equipment, "บับเบิ้ล") || 0}.-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span><b>น้ำหนัก:</b> ${
+                p.weight ? (p.weight / 1000).toFixed(2) + " kg" : "-"
+              }</span>
+              <span>${p.tracking_number || "-"}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-right: 5px;">
+              <span><b>EMS:</b></span>
+              <span>${p.shipping_cost || 0}.-</span>
+            </div>
+
+        <div >---------------------</div>
+          ${
+            p.payment_method === "cash"
+              ? `
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>รวมทั้งสิ้น:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>เงินสด:</b></span>
+                  <span>${p.customer_paid || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>เงินทอน:</b></span>
+                  <span>${
+                    (p.customer_paid || 0) - (p.total_price || 0)
+                  }.-</span>
+                </div>
+              `
+              : p.payment_method === "qr"
+              ? `
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>รวมทั้งสิ้น:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>ชำระผ่าน QR:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+              `
+              : `
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>รวมทั้งสิ้น:</b></span>
+                  <span>${p.total_price || 0}.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>ชำระด้วย:</b></span>
+                  <span>-</span>
+                </div>
+              `
+          }
+
+
+      <div class="line"></div>
+      <br>
+      </div>
+      `);
+        });
+
+        printWindow.document.write(`
+          <div class="footer">
+            @@@ ขอบคุณที่ใช้บริการค่ะ @@@
+          </div>
+      </body>
+    </html>
+    `);
+        printWindow.document.close();
+
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+          printWindow.onafterprint = () => printWindow.close();
+        };
+      }
     } catch (err) {
       console.error(err);
       alert("เกิดข้อผิดพลาดในการบันทึก");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePrintAndSaveForQrCode = async (paperSize = "58mm") => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // สร้าง array ของพัสดุที่จะอัปเดต
+      const parcelsToUpdate = parcelData.parcels.map((p) => ({
+        _id: p._id, // ✅ ต้องเป็น _id
+        total_price: p.totalPrice,
+      }));
+      console.log("Parcels to update:", parcelsToUpdate);
+
+      // เรียก API updatePayment
+      const res = await axios.put(
+        "http://localhost:4000/admin-ban-poolsub/updatePaymentForQrCode",
+        {
+          parcels: parcelsToUpdate, // array ของ {_id, total_price}
+          payment_method: paymentMethod,
+          customer_paid:
+            paymentMethod === "qr" ? Number(customerPaid) : parcelData.netPrice,
+          receipt_number: receiptNumber,
+        },
+        { auth: { username: "admin", password: "bands" } }
+      );
+
+      if (!res.data || res.data.modifiedCount === 0) {
+        setError("ไม่สามารถอัปเดตข้อมูลพัสดุได้");
+        return;
+      }
+
+      alert(
+        `บันทึกข้อมูลการชำระเงินด้วย QR สำเร็จ (${res.data.modifiedCount} พัสดุ) กำลังพิมพ์ใบเสร็จ...`
+      );
+
+      if (paymentMethod === "qr" && result?.qr_image) {
+        const printWindow = window.open("", "_blank");
+        const doc = printWindow.document;
+
+        // พิมพ์ใบเสร็จ QR
+        const fontBase = paperSize === "58mm" ? "10px" : "13px";
+        const fontHeader = paperSize === "58mm" ? "7px" : "17px";
+        const fontFooter = paperSize === "58mm" ? "4px" : "12px";
+
+        doc.write(`
+          <html>
+            <head>
+              <title>ใบเสร็จรับเงินสินค้า</title>
+              <style>
+                @page { size: auto; margin: 0; }
+                body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
+                h3 { font-size: ${fontHeader}; }
+                .footer { font-size: ${fontFooter}; 
+                line-height: 1.1; 
+                }
+
+                .receipt { width: 100%; text-align: left; }
+                
+                .line {
+                  border-bottom: 1px dashed #000;
+                  margin: 0.5rem 0;
+                }
+                .qr {
+                  text-align: center;
+                  margin-top: 1rem;
+                }
+
+                .qr p {
+                margin-bottom: 2rem;
+                  font-weight: bold;
+                  font-size: 20px;
+                  margin: 0.1rem 0;
+                  line-height: 1.1;
+                }
+                .qr img {
+                  width: 150px;
+                  height: 150px;
+                  margin-top: 0.5rem;
+                  margin-buttom: 2rem;
+                }
+              </style>
+            </head>
+                ${
+                  paymentMethod === "qr" && result?.qr_image
+                    ? `<div class="qr">
+                        <p>สแกนเพื่อชำระเงิน</p>
+                        <img id="qrImage" src="${result.qr_image}" alt="QR Code"/>
+                      </div>`
+                    : ""
+                }
+              </div>
+            </body>
+          </html>
+          `);
+
+        doc.close();
+
+        // ✅ ถ้ามี QR ให้รอโหลดก่อนพิมพ์
+        const qrImage = printWindow.document.getElementById("qrImage");
+        if (qrImage) {
+          qrImage.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
+          };
+        } else {
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
+          };
+        }
+      } else {
+        setError("ไม่พบข้อมูลพัสดุที่อัปเดต");
+      }
+    } catch (err) {
+      console.error("เกิดข้อผิดพลาด:", err);
+      setError("อัปเดตข้อมูลไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
@@ -401,117 +745,6 @@ const Payment = () => {
     }
   };
 
-  const handlePrintAndSaveForQrCode = async (paperSize = "58mm") => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // บันทึกข้อมูลลงฐานข้อมูล
-      const res = await axios.put(
-        "http://localhost:4000/admin-ban-poolsub/updatePayment",
-        {
-          total_price: totalPriceNumber,
-          net_price: totalPriceNumber,
-          receipt_number: receiptNumber,
-          payment_method: "qr",
-          customer_paid: totalPriceNumber,
-        },
-        {
-          auth: { username: "admin", password: "bands" },
-        }
-      );
-
-      if (res.data && res.data.parcel) {
-        const parcel = res.data.parcel;
-        alert("บันทึกข้อมูลการชำระเงินด้วย QR สำเร็จ กำลังพิมพ์ใบเสร็จ...");
-
-        // พิมพ์ใบเสร็จ QR
-        const fontBase = paperSize === "58mm" ? "10px" : "13px";
-        const fontHeader = paperSize === "58mm" ? "7px" : "17px";
-        const fontFooter = paperSize === "58mm" ? "4px" : "12px";
-
-        const printWindow = window.open("", "_blank");
-        const doc = printWindow.document;
-
-        doc.write(`
-          <html>
-            <head>
-              <title>ใบเสร็จรับเงินสินค้า</title>
-              <style>
-                @page { size: auto; margin: 0; }
-                body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
-                h3 { font-size: ${fontHeader}; }
-                .footer { font-size: ${fontFooter}; 
-                line-height: 1.1; 
-                }
-
-                .receipt { width: 100%; text-align: left; }
-                
-                .line {
-                  border-bottom: 1px dashed #000;
-                  margin: 0.5rem 0;
-                }
-                .qr {
-                  text-align: center;
-                  margin-top: 1rem;
-                }
-
-                .qr p {
-                margin-bottom: 2rem;
-                  font-weight: bold;
-                  font-size: 20px;
-                  margin: 0.1rem 0;
-                  line-height: 1.1;
-                }
-                .qr img {
-                  width: 150px;
-                  height: 150px;
-                  margin-top: 0.5rem;
-                  margin-buttom: 2rem;
-                }
-              </style>
-            </head>
-                ${
-                  paymentMethod === "qr" && result?.qr_image
-                    ? `<div class="qr">
-                        <p>สแกนเพื่อชำระเงิน</p>
-                        <img id="qrImage" src="${result.qr_image}" alt="QR Code"/>
-                      </div>`
-                    : ""
-                }
-              </div>
-            </body>
-          </html>
-          `);
-
-        doc.close();
-
-        // ✅ ถ้ามี QR ให้รอโหลดก่อนพิมพ์
-        const qrImage = printWindow.document.getElementById("qrImage");
-        if (qrImage) {
-          qrImage.onload = () => {
-            printWindow.focus();
-            printWindow.print();
-            printWindow.onafterprint = () => printWindow.close();
-          };
-        } else {
-          printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
-            printWindow.onafterprint = () => printWindow.close();
-          };
-        }
-      } else {
-        setError("ไม่พบข้อมูลพัสดุที่อัปเดต");
-      }
-    } catch (err) {
-      console.error("เกิดข้อผิดพลาด:", err);
-      setError("อัปเดตข้อมูลไม่สำเร็จ");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div
       style={{
@@ -562,29 +795,49 @@ const Payment = () => {
           </h4>
 
           {allEquipment.length > 0 ? (
-            <ul
-              className="border rounded-lg divide-y divide-gray-200 list-none bg-white p-3"
-              style={{ borderRadius: "10px" }}
-            >
+            <div>
               {parcelData.parcels.map((p, index) => (
-                <div key={index} className="mb-3 p-3 border rounded">
-                  <h5>
-                    พัสดุ #{index + 1} - Tracking: {p.tracking_number}
+                <div
+                  key={index}
+                  className="border rounded-lg bg-white p-3 mb-3"
+                  style={{ borderRadius: "10px" }}
+                >
+                  <h5 className="mb-2" style={{ textAlign: "left" }}>
+                    Tracking: {p.tracking_number}
                   </h5>
-                  <ul>
-                    {p.equipment.map((item, i) => (
-                      <li key={i}>
-                        {item.name} : {item.price} บาท
-                      </li>
-                    ))}
-                  </ul>
-                  <p>ค่าส่ง: {p.shipping_cost} บาท</p>
-                  <p>
-                    <strong>ราคารวมพัสดุนี้: {p.totalPrice} บาท</strong>
-                  </p>
+                  {p.equipment.length > 0 ? (
+                    <div className="space-y-1">
+                      {p.equipment.map((item, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            borderBottom: "1px solid #e5e7eb", // เส้นคั่นเป็นสีเทาอ่อน
+                            paddingBottom: "4px",
+                            marginBottom: "4px",
+                            listStyleType: "none",
+                          }}
+                        >
+                          <span>{item.name}</span>
+                          <span>{item.price} บาท</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">ไม่มีอุปกรณ์เพิ่มเติม</p>
+                  )}
+                  <div className="flex justify-between mt-2">
+                    <span>ค่าส่ง</span>
+                    <span>{p.shipping_cost} บาท</span>
+                  </div>
+                  <div className="flex justify-between font-bold">
+                    <span>ราคารวม</span>
+                    <span>{p.totalPrice} บาท</span>
+                  </div>
                 </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="text-gray-500 text-left mt-2">
               ไม่มีอุปกรณ์เพิ่มเติม
@@ -611,7 +864,7 @@ const Payment = () => {
           <div className="flex justify-between">
             <span>ค่าส่ง</span>
             <span style={{ fontWeight: "500" }}>
-              {totalPriceNumber.toFixed(2)} บาท
+              {totalShipping.toFixed(2)} บาท
             </span>
           </div>
 
@@ -868,23 +1121,6 @@ const Payment = () => {
           )}
         </div>
       )}
-
-      {/* <button
-        onClick={handleUpdatePayment}
-        disabled={loading}
-        className="btn-lg w-100 mb-2"
-        style={{
-          backgroundColor: "#5EABD6",
-          color: "#16476A", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
-          borderRadius: "10px",
-          fontSize: "18px",
-          height: "50px",
-          width: "70%",
-          marginTop: "1rem",
-        }}
-      >
-        {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-      </button> */}
     </div>
   );
 };

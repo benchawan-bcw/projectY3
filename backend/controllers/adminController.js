@@ -372,12 +372,53 @@ exports.selectPayment = async (req, res) => {
 //   }
 // };
 
+exports.updatePaymentForQrCode = async (req, res) => {
+  try {
+    const { parcels, payment_method, customer_paid, receipt_number } = req.body;
+
+    if (!parcels || parcels.length === 0) {
+      return res.status(400).json({ message: "ต้องระบุพัสดุที่จะอัปเดต" });
+    }
+
+    // สร้าง bulk operations
+    const bulkOps = parcels.map((p) => ({
+      updateOne: {
+        filter: { _id: p._id },
+        update: {
+          $set: {
+            total_price: p.total_price, // ราคาของแต่ละพัสดุ
+            net_price: p.total_price,
+            payment_method,
+            customer_paid,
+            receipt_number,
+            payment_status: "ชำระเงินเรียบร้อย",
+            update_at: new Date(),
+          },
+        },
+      },
+    }));
+
+    const result = await Parcels.bulkWrite(bulkOps);
+
+    console.log("อัปเดตพัสดุเรียบร้อย:", result.modifiedCount);
+
+    res.status(200).json({
+      message: `อัปเดตข้อมูลการชำระเงินเรียบร้อย ${result.modifiedCount} พัสดุ`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (err) {
+    console.error("เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน:", err);
+    res
+      .status(500)
+      .json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์", error: err.message });
+  }
+};
+
 exports.updatePayment = async (req, res) => {
   try {
-    const { total_price, net_price, payment_method, customer_paid, parcelIds } =
-      req.body;
+    const { parcels, net_price, payment_method, customer_paid } = req.body;
 
-    if (!parcelIds || parcelIds.length === 0) {
+    if (!parcels || parcels.length === 0) {
       return res.status(400).json({ message: "ต้องระบุพัสดุที่จะอัปเดต" });
     }
 
@@ -386,14 +427,14 @@ exports.updatePayment = async (req, res) => {
 
     const bulkOps = parcels.map((p) => ({
       updateOne: {
-        filter: { _id: p._id },
+        filter: { _id: p.id },
         update: {
           $set: {
-            total_price: p.totalPrice,
+            total_price: p.total_price, // ราคาของแต่ละพัสดุ
             net_price,
             receipt_number,
             customer_paid:
-              payment_method === "cash" ? customer_paid : p.totalPrice,
+              payment_method === "cash" ? customer_paid : p.total_price,
             payment_method,
             payment_status: "ชำระเงินเรียบร้อย",
             update_at: new Date(),
@@ -404,8 +445,9 @@ exports.updatePayment = async (req, res) => {
 
     const result = await Parcels.bulkWrite(bulkOps);
     console.log("อัปเดตพัสดุเรียบร้อย:", result.modifiedCount);
+
     res.status(200).json({
-      message: `อัปเดตข้อมูลการชำระเงินเรียบร้อย ${updatedParcels.modifiedCount} พัสดุ`,
+      message: `อัปเดตข้อมูลการชำระเงินเรียบร้อย ${result.modifiedCount} พัสดุ`,
     });
   } catch (err) {
     console.error("เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน:", err);

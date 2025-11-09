@@ -11,9 +11,10 @@ const {
   equipment,
   selectPayment,
   updatePayment,
+  updatePaymentForQrCode,
   editParcel,
   deleteParcel,
-getByBillOnDate,
+  getByBillOnDate,
 } = require("../controllers/adminController");
 
 //middleware
@@ -27,6 +28,7 @@ router.post("/calculateEms", calculateEms);
 router.get("/equipment", equipment);
 router.post("/selectPayment", selectPayment);
 router.put("/updatePayment", updatePayment);
+router.put("/updatePaymentForQrCode", updatePaymentForQrCode);
 router.put("/editParcel/:id", editParcel);
 router.delete("/deleteParcel/:id", deleteParcel);
 router.get("/getByBillOnDate", getByBillOnDate);
