@@ -324,49 +324,122 @@ exports.selectPayment = async (req, res) => {
 };
 
 // อัปเดตข้อมูลการชำระเงิน
+// exports.updatePayment = async (req, res) => {
+//   try {
+//     const { total_price, net_price, payment_method, customer_paid, } =
+//       req.body;
+
+//     const latestParcel = await Parcels.findOne().sort({ update_at: -1 });
+//     if (!latestParcel) {
+//       return res.status(404).json({ message: "ไม่พบพัสดุในระบบ" });
+//     }
+
+//     const receipt_number =
+//       "BILL-" + Math.floor(100000 + Math.random() * 900000).toString();
+
+//     // อัปเดตข้อมูลในฐานข้อมูล
+//     const updatedParcel = await Parcels.findOneAndUpdate(
+//       { tracking_number: latestParcel.tracking_number },
+//       {
+//         $set: {
+//           total_price,
+//           net_price,
+//           receipt_number,
+//           customer_paid,
+//           payment_method,
+//           payment_status: "ชำระเงินเรียบร้อย",
+//           update_at: new Date(),
+//         },
+//       },
+//       { new: true }
+//     );
+
+//     if (!updatedParcel) {
+//       return res
+//         .status(404)
+//         .json({ message: "ไม่พบข้อมูลพัสดุที่ต้องการอัปเดต" });
+//     }
+
+//     res.status(200).json({
+//       message: "อัปเดตข้อมูลการชำระเงินสำเร็จ",
+//       parcel: updatedParcel,
+//     });
+//   } catch (err) {
+//     console.error("เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน:", err);
+//     res
+//       .status(500)
+//       .json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์", error: err.message });
+//   }
+// };
+
 exports.updatePayment = async (req, res) => {
   try {
-    const { total_price, net_price, payment_method, customer_paid } = req.body;
+    const { total_price, net_price, payment_method, customer_paid, parcelIds } =
+      req.body;
 
-    const latestParcel = await Parcels.findOne().sort({ update_at: -1 });
-    if (!latestParcel) {
-      return res.status(404).json({ message: "ไม่พบพัสดุในระบบ" });
+    if (!parcelIds || parcelIds.length === 0) {
+      return res.status(400).json({ message: "ต้องระบุพัสดุที่จะอัปเดต" });
     }
 
     const receipt_number =
       "BILL-" + Math.floor(100000 + Math.random() * 900000).toString();
 
-    // อัปเดตข้อมูลในฐานข้อมูล
-    const updatedParcel = await Parcels.findOneAndUpdate(
-      { tracking_number: latestParcel.tracking_number },
-      {
-        $set: {
-          total_price,
-          net_price,
-          receipt_number,
-          customer_paid,
-          payment_method,
-          payment_status: "ชำระเงินเรียบร้อย",
-          update_at: new Date(),
+    const bulkOps = parcels.map((p) => ({
+      updateOne: {
+        filter: { _id: p._id },
+        update: {
+          $set: {
+            total_price: p.totalPrice,
+            net_price,
+            receipt_number,
+            customer_paid:
+              payment_method === "cash" ? customer_paid : p.totalPrice,
+            payment_method,
+            payment_status: "ชำระเงินเรียบร้อย",
+            update_at: new Date(),
+          },
         },
       },
-      { new: true }
-    );
+    }));
 
-    if (!updatedParcel) {
-      return res
-        .status(404)
-        .json({ message: "ไม่พบข้อมูลพัสดุที่ต้องการอัปเดต" });
-    }
-
+    const result = await Parcels.bulkWrite(bulkOps);
+    console.log("อัปเดตพัสดุเรียบร้อย:", result.modifiedCount);
     res.status(200).json({
-      message: "อัปเดตข้อมูลการชำระเงินสำเร็จ",
-      parcel: updatedParcel,
+      message: `อัปเดตข้อมูลการชำระเงินเรียบร้อย ${updatedParcels.modifiedCount} พัสดุ`,
     });
   } catch (err) {
     console.error("เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน:", err);
     res
       .status(500)
       .json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์", error: err.message });
+  }
+};
+
+//เช็กข้อมูลตามวัน
+function getDayRangeBangkok(dateStr) {
+  const tz = "+07:00";
+  const d = dateStr ? dateStr : new Date().toISOString().slice(0, 10);
+  const start = new Date(`${d}T00:00:00${tz}`);
+  const end = new Date(`${d}T23:59:59.999${tz}`);
+  return { start, end };
+}
+
+// ดึงเฉพาะเลขบิลในวันนั้น
+exports.getByBillOnDate = async (req, res) => {
+  try {
+    const { bill, date } = req.query;
+    if (!bill) return res.status(400).json({ message: "ต้องระบุ bill" });
+
+    const { start, end } = getDayRangeBangkok(date);
+    const parcel = await Parcel.findOne({
+      billNumber: bill,
+      createdAt: { $gte: start, $lt: end },
+    });
+
+    if (!parcel) return res.status(404).json({ message: "ไม่พบบิลในวันนั้น" });
+    res.json({ success: true, parcel });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
   }
 };

@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Payment = () => {
+  const [parcels, setParcels] = useState([]); // array ของพัสดุ
+  const [parcelData, setParcelData] = useState(null); // ข้อมูลรวม sender, equipment, totalShipping
   const [parcel, setParcel] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [customerPaid, setCustomerPaid] = useState("");
@@ -16,49 +18,43 @@ const Payment = () => {
   useEffect(() => {
     const fetchParcels = async () => {
       try {
-        // ดึงพัสดุทั้งหมดจาก API
         const res = await axios.get(
           "http://localhost:4000/admin-ban-poolsub/getParcels",
-          {
-            auth: { username: "admin", password: "bands" },
-          }
+          { auth: { username: "admin", password: "bands" } }
         );
 
         if (res.data && res.data.length > 0) {
-          // ดึงพัสดุล่าสุด
           const latestParcel = res.data[0];
           const latestSender = latestParcel.sender;
           const latestDate = new Date(latestParcel.update_at).toDateString();
 
-          // กรองเอาพัสดุทั้งหมดของผู้ส่งล่าสุด
+          // กรองพัสดุทั้งหมดของผู้ส่งล่าสุด
           const parcelsOfLatestSender = res.data.filter(
             (p) =>
               p.sender === latestSender &&
               new Date(p.update_at).toDateString() === latestDate
           );
 
-          // รวมค่าอุปกรณ์ทั้งหมดและค่าส่ง
-          let totalShipping = 0;
-          const allEquipment = [];
-
-          parcelsOfLatestSender.forEach((p) => {
-            totalShipping += p.shipping_cost || 0; // รวมค่าส่ง
-            if (p.equipment && p.equipment.length > 0) {
-              allEquipment.push(...p.equipment); // รวมอุปกรณ์
-            }
+          // คำนวณราคาของแต่ละพัสดุ
+          const parcelsWithTotal = parcelsOfLatestSender.map((p) => {
+            const equipmentPrice =
+              p.equipment?.reduce((sum, item) => sum + (item.price || 0), 0) ||
+              0;
+            const totalPrice = equipmentPrice + (p.shipping_cost || 0);
+            return { ...p, totalPrice };
           });
 
-          // รวมข้อมูลเพื่อแสดง
-          const combinedData = {
-            sender: latestSender,
-            parcels: parcelsOfLatestSender,
-            equipment: allEquipment,
-            totalShipping,
-          };
+          // netPrice รวมทั้งหมด
+          const netPrice = parcelsWithTotal.reduce(
+            (sum, p) => sum + p.totalPrice,
+            0
+          );
 
-          setParcel(combinedData); // เก็บรวมทั้งหมดใน state
-        } else {
-          setError("ไม่พบข้อมูลพัสดุ");
+          setParcelData({
+            sender: latestSender,
+            parcels: parcelsWithTotal,
+            netPrice,
+          });
         }
       } catch (err) {
         console.error(err);
@@ -71,18 +67,19 @@ const Payment = () => {
     fetchParcels();
   }, []);
 
-  // ดึงข้อมูลจากพัสดุ
-  const equipment = parcel?.equipment || [];
-  const totalShipping = parcel?.totalShipping || 0;
-
-  // คำนวณราคารวมอุปกรณ์
-  const totalEquipmentPrice = equipment.reduce(
+  // รวมอุปกรณ์ทั้งหมดของผู้ส่งล่าสุด
+  const allEquipment =
+    parcelData?.parcels?.flatMap((p) => p.equipment || []) || [];
+  const totalShipping =
+    parcelData?.parcels?.reduce((sum, p) => sum + (p.shipping_cost || 0), 0) ||
+    0;
+  const totalEquipmentPrice = allEquipment.reduce(
     (sum, item) => sum + (item.price || 0),
     0
   );
 
-  // คำนวณราคารวมทั้งหมด (รวมค่าส่ง)
-  const totalPriceNumber = totalEquipmentPrice + totalShipping;
+  // ราคาทั้งหมดรวมค่าส่ง
+  const totalPriceNumber = parcelData?.netPrice || 0;
 
   // QR
   useEffect(() => {
@@ -112,7 +109,7 @@ const Payment = () => {
 
   if (loading) return <p>กำลังโหลดข้อมูล...</p>;
   if (error) return <p>{error}</p>;
-  if (!parcel) return null;
+  if (!parcelData) return <p>ไม่พบข้อมูลพัสดุ</p>;
 
   const handleSelectPayment = async () => {
     try {
@@ -160,33 +157,26 @@ const Payment = () => {
     setError(null);
 
     try {
+      const parcelIds = parcelData.parcels.map((p) => p._id);
+
       const res = await axios.put(
-        "http://localhost:4000/admin-ban-poolsub/updatePayment",
+        `http://localhost:4000/admin-ban-poolsub/updatePayment`,
         {
-          total_price: totalPriceNumber,
-          net_price: totalPriceNumber,
-          receipt_number: receiptNumber,
+          parcelIds,
+          total_price: totalPriceNumber, // หรือส่งแยก p.totalPrice ถ้าต้องการ
+          net_price: parcelData.netPrice,
           payment_method: paymentMethod,
           customer_paid:
             paymentMethod === "cash" ? Number(customerPaid) : totalPriceNumber,
         },
-        {
-          auth: { username: "admin", password: "bands" },
-        }
+        { auth: { username: "admin", password: "bands" } }
       );
 
-      if (res.data && res.data.parcel) {
-        const parcel = res.data.parcel;
-        setPaymentMethod(parcel.paymentMethod || "ไม่ระบุ");
-        setTotalPrice(parcel.total_price);
-        setCustomerPaid(parcel.customer_paid || 0);
-        alert("อัปเดตข้อมูลการชำระเงินสำเร็จ");
-      } else {
-        setError("ไม่พบข้อมูลพัสดุที่อัปเดต");
-      }
+      console.log(res.data);
+      alert("บันทึกข้อมูลการชำระเงินเรียบร้อยแล้ว");
     } catch (err) {
-      console.error("เกิดข้อผิดพลาด:", err);
-      setError("อัปเดตข้อมูลไม่สำเร็จ");
+      console.error(err);
+      alert("เกิดข้อผิดพลาดในการบันทึก");
     } finally {
       setLoading(false);
     }
@@ -200,7 +190,7 @@ const Payment = () => {
 
     const fontBase = paperSize === "58mm" ? "10px" : "13px";
     const fontHeader = paperSize === "58mm" ? "7px" : "17px";
-    const fontFooter = paperSize === "58mm" ? "4px" : "12px";
+    const fontFooter = paperSize === "58mm" ? "7px" : "12px";
 
     const today = new Date().toLocaleDateString("th-TH");
     const time = new Date().toLocaleTimeString("th-TH");
@@ -288,7 +278,7 @@ const Payment = () => {
   const handlePrintAndSaveForCash = async (paperSize = "58mm") => {
     // ✅ ตรวจสอบก่อนว่าเงินที่ลูกค้าจ่ายครบหรือยัง
     if (paymentMethod === "cash" && Number(customerPaid) < totalPriceNumber) {
-      alert("❌ จำนวนเงินที่ลูกค้าชำระน้อยกว่าจำนวนที่ต้องชำระ");
+      alert("จำนวนเงินที่ลูกค้าชำระน้อยกว่าจำนวนที่ต้องชำระ");
       return;
     }
 
@@ -297,6 +287,7 @@ const Payment = () => {
 
     try {
       // ✅ 1. บันทึกข้อมูลการชำระเงินลงฐานข้อมูล
+
       const res = await axios.put(
         "http://localhost:4000/admin-ban-poolsub/updatePayment",
         {
@@ -543,7 +534,7 @@ const Payment = () => {
           color: "#dc2626",
         }}
       >
-        ใบเสร็จชำระเงิน
+        หน้าชำระเงิน
       </h1>
 
       <div
@@ -570,28 +561,28 @@ const Payment = () => {
             รายละเอียดอุปกรณ์
           </h4>
 
-          {equipment.length > 0 ? (
+          {allEquipment.length > 0 ? (
             <ul
               className="border rounded-lg divide-y divide-gray-200 list-none bg-white p-3"
               style={{ borderRadius: "10px" }}
             >
-              {equipment.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex justify-between p-2 hover:bg-gray-50 transition "
-                  style={{
-                    fontSize: "15px",
-                    borderBottom:
-                      index !== equipment.length - 1
-                        ? "1px solid #D9D9D9"
-                        : "none",
-                  }}
-                >
-                  <span>{item.name}</span>
-                  <span style={{ fontWeight: "500" }}>
-                    {item.price?.toFixed(2)} บาท
-                  </span>
-                </li>
+              {parcelData.parcels.map((p, index) => (
+                <div key={index} className="mb-3 p-3 border rounded">
+                  <h5>
+                    พัสดุ #{index + 1} - Tracking: {p.tracking_number}
+                  </h5>
+                  <ul>
+                    {p.equipment.map((item, i) => (
+                      <li key={i}>
+                        {item.name} : {item.price} บาท
+                      </li>
+                    ))}
+                  </ul>
+                  <p>ค่าส่ง: {p.shipping_cost} บาท</p>
+                  <p>
+                    <strong>ราคารวมพัสดุนี้: {p.totalPrice} บาท</strong>
+                  </p>
+                </div>
               ))}
             </ul>
           ) : (
