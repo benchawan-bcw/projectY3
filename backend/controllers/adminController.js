@@ -4,6 +4,7 @@ const path = require("path");
 const mongoose = require("mongoose");
 const Parcels = require("../models/parcels");
 const { getThaiPostToken } = require("../config/memberToken");
+const thaiPostToken = require("../config/memberToken");
 const qrcode = require("qrcode");
 const generatePayload = require("promptpay-qr");
 
@@ -60,7 +61,7 @@ exports.registerParcel = async (req, res) => {
     // ดึง token
     let token;
     try {
-      token = await getThaiPostToken();
+      token = await thaiPostToken.getThaiPostToken();
     } catch (err) {
       console.error("Error getting ThaiPost token:", err.message);
       return res
@@ -70,24 +71,25 @@ exports.registerParcel = async (req, res) => {
 
     // ดึงข้อมูล tracking
     let trackingInfo;
+
     try {
       const response = await fetch(
         "https://trackapi.thailandpost.co.th/post/api/v1/track",
         {
-          status: "all",
-          language: "TH",
-          barcode: [tracking_number],
-        },
-        {
+          method: "POST",
           headers: {
             Authorization: `Token ${token}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            status: "all",
+            language: "TH",
+            barcode: [tracking_number],
+          }),
         }
       );
 
       const text = await response.text();
-      // debug
       console.log("ThaiPost track response:", text);
 
       try {
@@ -112,6 +114,14 @@ exports.registerParcel = async (req, res) => {
       : 0;
     const net_price = total_price;
 
+    let parcelStatus =
+      trackingInfo?.status ||
+      (Array.isArray(trackingInfo?.items) && trackingInfo.items[0]?.status) ||
+      "รออัปเดต";
+
+    // แก้ typo ที่เป็นไปได้
+    if (parcelStatus === "รออัปปเดต") parcelStatus = "รออัปเดต";
+
     const parcel = await Parcels.create({
       tracking_number,
       sender,
@@ -122,7 +132,7 @@ exports.registerParcel = async (req, res) => {
       weight,
       equipment,
       service_type: service_type || "EMS",
-      status: trackingInfo?.status || "รออัปเดต",
+      parcel_status: parcelStatus,
       shipping_cost: shippingCost,
       total_equipment,
       total_price,
@@ -202,8 +212,10 @@ exports.calculateEms = async (req, res) => {
     const { weight, postcode, packagingCost } = req.body;
     // ตรวจสอบพื้นที่เกาะจากรหัสไปรษณีย์
 
-     if (!/^\d{5}$/.test(postcode)) {
-      return res.status(400).json({ success: false, error: "Invalid postcode" });
+    if (!/^\d{5}$/.test(postcode)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid postcode" });
     }
 
     const isIsland = checkIsIsland(postcode);

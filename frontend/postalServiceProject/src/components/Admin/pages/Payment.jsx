@@ -84,6 +84,72 @@ const Payment = () => {
   // คำนวณราคารวมทั้งหมด (รวมค่าส่ง)
   const totalPriceNumber = totalEquipmentPrice + totalShipping;
 
+  // QR
+  useEffect(() => {
+    const autoGenerateQR = async () => {
+      if (paymentMethod === "qr") {
+        try {
+          setLoading(true);
+          console.log("สร้าง QR อัตโนมัติสำหรับยอด:", totalPriceNumber);
+
+          const res = await axios.post(
+            "http://localhost:4000/admin-ban-poolsub/selectPayment",
+            { paymentMethod: "qr", total_price: totalPriceNumber },
+            { auth: { username: "admin", password: "bands" } }
+          );
+          setResult(res.data);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      } else if (paymentMethod === "cash") {
+        setResult(null);
+      }
+    };
+    autoGenerateQR();
+  }, [paymentMethod, totalPriceNumber]);
+
+  if (loading) return <p>กำลังโหลดข้อมูล...</p>;
+  if (error) return <p>{error}</p>;
+  if (!parcel) return null;
+
+  const handleSelectPayment = async () => {
+    try {
+      if (paymentMethod === "cash" && Number(customerPaid) < totalPriceNumber) {
+        alert("จำนวนเงินที่ลูกค้าชำระไม่เพียงพอ");
+        return;
+      }
+
+      setLoading(true);
+      console.log("ส่งข้อมูลชำระเงิน:", {
+        paymentMethod,
+        total_price: totalPriceNumber,
+        customer_paid:
+          paymentMethod === "cash" ? Number(customerPaid) : undefined,
+      });
+
+      const res = await axios.post(
+        "http://localhost:4000/admin-ban-poolsub/selectPayment",
+        {
+          paymentMethod,
+          total_price: totalPriceNumber,
+          customer_paid:
+            paymentMethod === "cash" ? Number(customerPaid) : undefined,
+        },
+        {
+          auth: { username: "admin", password: "bands" },
+        }
+      );
+      setResult(res.data);
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาดในการชำระเงิน");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUpdatePayment = async () => {
     // ตรวจสอบว่าลูกค้าจ่ายครบหรือยัง
     if (paymentMethod === "cash" && Number(customerPaid) < totalPriceNumber) {
@@ -121,66 +187,6 @@ const Payment = () => {
     } catch (err) {
       console.error("เกิดข้อผิดพลาด:", err);
       setError("อัปเดตข้อมูลไม่สำเร็จ");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const autoGenerateQR = async () => {
-      if (paymentMethod === "qr") {
-        try {
-          setLoading(true);
-          console.log("สร้าง QR อัตโนมัติสำหรับยอด:", totalPriceNumber);
-
-          const res = await axios.post(
-            "http://localhost:4000/admin-ban-poolsub/selectPayment",
-            { paymentMethod: "qr", total_price: totalPriceNumber },
-            { auth: { username: "admin", password: "bands" } }
-          );
-          setResult(res.data);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-      } else if (paymentMethod === "cash") {
-        setResult(null);
-      }
-    };
-    autoGenerateQR();
-  }, [paymentMethod, totalPriceNumber]);
-
-  if (loading) return <p>กำลังโหลดข้อมูล...</p>;
-  if (error) return <p>{error}</p>;
-  if (!parcel) return null;
-
-  const handlePayment = async () => {
-    try {
-      setLoading(true);
-      console.log("ส่งข้อมูลชำระเงิน:", {
-        paymentMethod,
-        total_price: totalPriceNumber,
-        customer_paid:
-          paymentMethod === "cash" ? Number(customerPaid) : undefined,
-      });
-
-      const res = await axios.post(
-        "http://localhost:4000/admin-ban-poolsub/selectPayment",
-        {
-          paymentMethod,
-          total_price: totalPriceNumber,
-          customer_paid:
-            paymentMethod === "cash" ? Number(customerPaid) : undefined,
-        },
-        {
-          auth: { username: "admin", password: "bands" },
-        }
-      );
-      setResult(res.data);
-    } catch (err) {
-      console.error(err);
-      alert("เกิดข้อผิดพลาดในการชำระเงิน");
     } finally {
       setLoading(false);
     }
@@ -276,6 +282,242 @@ const Payment = () => {
         printWindow.print();
         printWindow.onafterprint = () => printWindow.close();
       };
+    }
+  };
+
+  const handlePrintAndSaveForCash = async (paperSize = "58mm") => {
+    // ✅ ตรวจสอบก่อนว่าเงินที่ลูกค้าจ่ายครบหรือยัง
+    if (paymentMethod === "cash" && Number(customerPaid) < totalPriceNumber) {
+      alert("❌ จำนวนเงินที่ลูกค้าชำระน้อยกว่าจำนวนที่ต้องชำระ");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // ✅ 1. บันทึกข้อมูลการชำระเงินลงฐานข้อมูล
+      const res = await axios.put(
+        "http://localhost:4000/admin-ban-poolsub/updatePayment",
+        {
+          total_price: totalPriceNumber,
+          net_price: totalPriceNumber,
+          receipt_number: receiptNumber,
+          payment_method: paymentMethod,
+          customer_paid:
+            paymentMethod === "cash" ? Number(customerPaid) : totalPriceNumber,
+        },
+        {
+          auth: { username: "admin", password: "bands" },
+        }
+      );
+
+      if (res.data && res.data.parcel) {
+        const parcel = res.data.parcel;
+        setPaymentMethod(parcel.paymentMethod || "ไม่ระบุ");
+        setTotalPrice(parcel.total_price);
+        setCustomerPaid(parcel.customer_paid || 0);
+        alert("✅ อัปเดตข้อมูลการชำระเงินสำเร็จ กำลังพิมพ์ใบเสร็จ...");
+
+        // ✅ 2. พิมพ์ใบเสร็จหลังบันทึกสำเร็จ
+        const fontBase = paperSize === "58mm" ? "10px" : "13px";
+        const fontHeader = paperSize === "58mm" ? "7px" : "17px";
+        const fontFooter = paperSize === "58mm" ? "4px" : "12px";
+
+        const today = new Date().toLocaleDateString("th-TH");
+        const time = new Date().toLocaleTimeString("th-TH");
+        const receiptNumber = `BILL-${Date.now().toString().slice(-4)}`;
+
+        const change =
+          paymentMethod === "cash"
+            ? Number(customerPaid || 0) - Number(totalPriceNumber || 0)
+            : 0;
+
+        const printWindow = window.open("", "_blank");
+        const doc = printWindow.document;
+
+        doc.write(`
+        <html>
+          <head>
+            <title>ใบเสร็จรับเงินสินค้า</title>
+            <style>
+              @page { size: auto; margin: 0; }
+              body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
+              h3 { font-size: ${fontHeader}; }
+              .footer { font-size: ${fontFooter}; line-height: 1.1; }
+              .receipt { width: 100%; text-align: left; }
+              .line { border-bottom: 1px dashed #000; margin: 0.5rem 0; }
+              .qr { text-align: center; margin-top: 1rem; }
+              .qr p { margin-bottom: 2rem; font-weight: bold; font-size: 20px; margin: 0.1rem 0; line-height: 1.1; }
+              .qr img { width: 150px; height: 150px; margin-top: 0.5rem; margin-buttom: 2rem; }
+            </style>
+          </head>
+          <body>
+            <div class="receipt">
+              <h3>📦 ใบเสร็จรับเงิน</h3>
+              <div class="line"></div>
+              <p>วันที่: ${today} ${time}</p>
+              <p>เลขที่ใบเสร็จ: ${receiptNumber}</p>
+              <p>วิธีชำระเงิน: ${
+                paymentMethod === "cash" ? "เงินสด" : "QR พร้อมเพย์"
+              }</p>
+              <p>ยอดรวม: ${totalPriceNumber} บาท</p>
+              <p>ลูกค้าชำระ: ${customerPaid} บาท</p>
+              <p>เงินทอน: ${change} บาท</p>
+              <div class="line"></div>
+
+              ${
+                paymentMethod === "qr" && result?.qr_image
+                  ? `<div class="qr">
+                       <p>สแกนเพื่อชำระเงิน</p>
+                       <img id="qrImage" src="${result.qr_image}" alt="QR Code"/>
+                     </div>`
+                  : ""
+              }
+
+              <div class="footer">
+                <p>ขอบคุณที่ใช้บริการ 💙</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+
+        doc.close();
+
+        const qrImage = printWindow.document.getElementById("qrImage");
+        if (qrImage) {
+          qrImage.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
+          };
+        } else {
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
+          };
+        }
+      } else {
+        setError("ไม่พบข้อมูลพัสดุที่อัปเดต");
+      }
+    } catch (err) {
+      console.error("เกิดข้อผิดพลาด:", err);
+      setError("อัปเดตข้อมูลไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePrintAndSaveForQrCode = async (paperSize = "58mm") => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // บันทึกข้อมูลลงฐานข้อมูล
+      const res = await axios.put(
+        "http://localhost:4000/admin-ban-poolsub/updatePayment",
+        {
+          total_price: totalPriceNumber,
+          net_price: totalPriceNumber,
+          receipt_number: receiptNumber,
+          payment_method: "qr",
+          customer_paid: totalPriceNumber,
+        },
+        {
+          auth: { username: "admin", password: "bands" },
+        }
+      );
+
+      if (res.data && res.data.parcel) {
+        const parcel = res.data.parcel;
+        alert("บันทึกข้อมูลการชำระเงินด้วย QR สำเร็จ กำลังพิมพ์ใบเสร็จ...");
+
+        // พิมพ์ใบเสร็จ QR
+        const fontBase = paperSize === "58mm" ? "10px" : "13px";
+        const fontHeader = paperSize === "58mm" ? "7px" : "17px";
+        const fontFooter = paperSize === "58mm" ? "4px" : "12px";
+
+        const printWindow = window.open("", "_blank");
+        const doc = printWindow.document;
+
+        doc.write(`
+          <html>
+            <head>
+              <title>ใบเสร็จรับเงินสินค้า</title>
+              <style>
+                @page { size: auto; margin: 0; }
+                body { font-family: 'Cordia New', sans-serif; font-size: ${fontBase}; }
+                h3 { font-size: ${fontHeader}; }
+                .footer { font-size: ${fontFooter}; 
+                line-height: 1.1; 
+                }
+
+                .receipt { width: 100%; text-align: left; }
+                
+                .line {
+                  border-bottom: 1px dashed #000;
+                  margin: 0.5rem 0;
+                }
+                .qr {
+                  text-align: center;
+                  margin-top: 1rem;
+                }
+
+                .qr p {
+                margin-bottom: 2rem;
+                  font-weight: bold;
+                  font-size: 20px;
+                  margin: 0.1rem 0;
+                  line-height: 1.1;
+                }
+                .qr img {
+                  width: 150px;
+                  height: 150px;
+                  margin-top: 0.5rem;
+                  margin-buttom: 2rem;
+                }
+              </style>
+            </head>
+                ${
+                  paymentMethod === "qr" && result?.qr_image
+                    ? `<div class="qr">
+                        <p>สแกนเพื่อชำระเงิน</p>
+                        <img id="qrImage" src="${result.qr_image}" alt="QR Code"/>
+                      </div>`
+                    : ""
+                }
+              </div>
+            </body>
+          </html>
+          `);
+
+        doc.close();
+
+        // ✅ ถ้ามี QR ให้รอโหลดก่อนพิมพ์
+        const qrImage = printWindow.document.getElementById("qrImage");
+        if (qrImage) {
+          qrImage.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
+          };
+        } else {
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
+          };
+        }
+      } else {
+        setError("ไม่พบข้อมูลพัสดุที่อัปเดต");
+      }
+    } catch (err) {
+      console.error("เกิดข้อผิดพลาด:", err);
+      setError("อัปเดตข้อมูลไม่สำเร็จ");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -483,7 +725,7 @@ const Payment = () => {
 
           {/* ปุ่มคำนวณ */}
           <button
-            onClick={handlePayment}
+            onClick={handleSelectPayment}
             disabled={loading}
             className="w-100 py-2"
             style={{
@@ -540,6 +782,23 @@ const Payment = () => {
               </div>
             </div>
           )}
+
+          {/* ปุ่มบันทึกข้อมูล */}
+          <button
+            onClick={handleUpdatePayment}
+            className="btn-lg w-100 mb-2"
+            style={{
+              backgroundColor: "#5EABD6",
+              color: "#16476A", // override สีข้อความ (Bootstrap ใช้สีขาวเริ่มต้น)
+              borderRadius: "10px",
+              fontSize: "18px",
+              height: "50px",
+              width: "70%",
+              marginTop: "1rem",
+            }}
+          >
+            บันทึกข้อมูล
+          </button>
         </div>
       )}
 
@@ -591,7 +850,7 @@ const Payment = () => {
 
           {/* ปุ่มพิมพ์ใบเสร็จ */}
           <button
-            onClick={handlePrint}
+            onClick={handlePrintAndSaveForQrCode}
             className="btn w-100 mb-2"
             style={{
               backgroundColor: "#44444E",
@@ -610,22 +869,6 @@ const Payment = () => {
             พิมพ์ใบเสร็จ
           </button>
 
-          {/* ปุ่มบันทึกข้อมูล */}
-          {/* <button
-            onClick={handleUpdatePayment}
-            disabled={loading}
-            className="btn btn-success btn-lg w-100"
-            style={{
-              color: "black",
-              borderRadius: "8px",
-              fontSize: "18px",
-              height: "50px",
-              fontWeight: "500",
-            }}
-          >
-            {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-          </button> */}
-
           {/* Loading indicator (ถ้ามี) */}
           {loading && (
             <p className="mt-3 text-secondary" style={{ fontSize: "14px" }}>
@@ -635,7 +878,7 @@ const Payment = () => {
         </div>
       )}
 
-      <button
+      {/* <button
         onClick={handleUpdatePayment}
         disabled={loading}
         className="btn-lg w-100 mb-2"
@@ -649,8 +892,8 @@ const Payment = () => {
           marginTop: "1rem",
         }}
       >
-        {loading ? "กำลังบันทึก..." : "พิมใบเสร็จ"}
-      </button>
+        {loading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+      </button> */}
     </div>
   );
 };
