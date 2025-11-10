@@ -13,9 +13,9 @@ const ParcelsSchema = new mongoose.Schema({
   total_equipment: { type: Number, default: 0 },
   service_type: { type: String, default: "EMS" },
   shipping_cost: { type: Number, default: 0 },
-  total_price: { type: Number, default: 0 }, //รวมค่าส่ง + อุปกรณ์
-  net_price: { type: Number, default: 0 }, //ราคาสุทธิ (ใช้พิมพ์ใบเสร็จ)
-  receipt_number: { type: String, default: null }, // หมายเลขใบเสร็จ
+  total_price: { type: Number, default: 0 }, 
+  net_price: { type: Number, default: 0 }, 
+  receipt_number: { type: String, default: null }, 
   parcel_status: { type: String, default: "อยู่ที่ร้านรับฝากส่ง" },
   payment_status: { type: String, default: "ยังไม่ชําระเงิน" },
   payment_method: { type: String, default: null },

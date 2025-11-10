@@ -95,7 +95,10 @@ const Payment = () => {
             { paymentMethod: "qr", total_price: totalPriceNumber },
             { auth: { username: "admin", password: "bands" } }
           );
-          setResult(res.data);
+          setResult({
+            ...res.data,
+            qr_image: res.data.qrCode, // map ให้ตรงกับ component
+          });
         } catch (err) {
           console.error(err);
         } finally {
@@ -187,7 +190,7 @@ const Payment = () => {
     try {
       // ส่ง _id ของแต่ละพัสดุและราคาของมัน
       const parcelsToUpdate = parcelData.parcels.map((p) => ({
-        id: p._id,
+        _id: p._id.trim(),
         total_price: p.totalPrice, // ราคาของพัสดุนี้
       }));
 
@@ -204,6 +207,15 @@ const Payment = () => {
         },
         { auth: { username: "admin", password: "bands" } }
       );
+
+      const updatedParcels = parcelData.parcels.map((p) => ({
+        ...p,
+        payment_method: paymentMethod,
+        customer_paid:
+          paymentMethod === "cash" ? Number(customerPaid) : parcelData.netPrice,
+      }));
+
+      setParcelData({ ...parcelData, parcels: updatedParcels });
 
       console.log(res.data);
       alert("บันทึกข้อมูลการชำระเงินเรียบร้อยแล้ว");
@@ -296,7 +308,7 @@ const Payment = () => {
           `);
 
         //แสดงชื่อผู้รับของผู้ส่งนั้น ๆ ทั้งหมด
-        parcelData.parcels.forEach((p) => {
+        updatedParcels.forEach((p) => {
           const { province, zipcode } = extractAddressData(p.address);
 
           printWindow.document.write(`
@@ -340,16 +352,7 @@ const Payment = () => {
                   <span><b>รวมทั้งสิ้น:</b></span>
                   <span>${p.total_price || 0}.-</span>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                  <span><b>เงินสด:</b></span>
-                  <span>${p.customer_paid || 0}.-</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
-                  <span><b>เงินทอน:</b></span>
-                  <span>${
-                    (p.customer_paid || 0) - (p.total_price || 0)
-                  }.-</span>
-                </div>
+                
               `
               : p.payment_method === "qr"
               ? `
@@ -378,8 +381,47 @@ const Payment = () => {
       <div class="line"></div>
       <br>
       </div>
+
+      
+      <div style="display:flex; justify-content:space-between;">
+                  <span><b>ค่าอุปกรณ์ทั้งหมด:</b></span>
+                  <span>${
+                    paymentMethod === "cash" ? totalPriceNumber : 0
+                  }.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>ค่าส่ง:</b></span>
+                  <span>${paymentMethod === "cash" ? totalShipping : 0}.-</span>
+                </div>
+       <div style="display:flex; justify-content:space-between;">
+                  <span><b>รวมทั้งหมด:</b></span>
+                  <span>${
+                    paymentMethod === "cash" ? totalPriceNumber : 0
+                  }.-</span>
+                </div>
+      <div style="display:flex; justify-content:space-between;">
+                  <span><b>เงินสด:</b></span>
+                    <span>${
+                      paymentMethod === "cash"
+                        ? customerPaid
+                        : p.total_price || 0
+                    }.-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span><b>เงินทอน:</b></span>
+                  <span>${
+                    paymentMethod === "cash"
+                      ? (p.customer_paid || 0) - totalPriceNumber
+                      : 0
+                  }.-</span>
+                </div>
       `);
-        });
+
+      
+    });
+    printWindow.document.write(`
+      
+    `);
 
         printWindow.document.write(`
           <div class="footer">
@@ -409,12 +451,18 @@ const Payment = () => {
     setError(null);
 
     try {
+      parcelData.parcels.forEach((p) => console.log("ก่อนอัปเดต _id:", p._id));
       // สร้าง array ของพัสดุที่จะอัปเดต
       const parcelsToUpdate = parcelData.parcels.map((p) => ({
-        _id: p._id, // ✅ ต้องเป็น _id
+        _id: p._id.trim(), // ✅ ต้องเป็น _id
         total_price: p.totalPrice,
       }));
       console.log("Parcels to update:", parcelsToUpdate);
+
+      const customerPaidValue =
+        paymentMethod === "qr"
+          ? parcelData.netPrice
+          : Number(customerPaid || 0);
 
       // เรียก API updatePayment
       const res = await axios.put(
@@ -422,8 +470,7 @@ const Payment = () => {
         {
           parcels: parcelsToUpdate, // array ของ {_id, total_price}
           payment_method: paymentMethod,
-          customer_paid:
-            paymentMethod === "qr" ? Number(customerPaid) : parcelData.netPrice,
+          customer_paid: customerPaidValue,
           receipt_number: receiptNumber,
         },
         { auth: { username: "admin", password: "bands" } }
@@ -434,18 +481,24 @@ const Payment = () => {
         return;
       }
 
+      setResult({
+        success: true,
+        modifiedCount: res.data.modifiedCount,
+        qr_image: res.data.qr_image,
+      });
+
       alert(
         `บันทึกข้อมูลการชำระเงินด้วย QR สำเร็จ (${res.data.modifiedCount} พัสดุ) กำลังพิมพ์ใบเสร็จ...`
       );
 
-      if (paymentMethod === "qr" && result?.qr_image) {
+      if (paymentMethod === "qr" && res.data.qr_image) {
         const printWindow = window.open("", "_blank");
         const doc = printWindow.document;
 
         // พิมพ์ใบเสร็จ QR
         const fontBase = paperSize === "58mm" ? "10px" : "13px";
         const fontHeader = paperSize === "58mm" ? "7px" : "17px";
-        const fontFooter = paperSize === "58mm" ? "4px" : "12px";
+        const fontFooter = paperSize === "58mm" ? "7px" : "12px";
 
         doc.write(`
           <html>
@@ -481,10 +534,12 @@ const Payment = () => {
                   width: 150px;
                   height: 150px;
                   margin-top: 0.5rem;
-                  margin-buttom: 2rem;
+                  margin-bottom: 2rem;
                 }
               </style>
             </head>
+            <body>
+            <div class="receipt">
                 ${
                   paymentMethod === "qr" && result?.qr_image
                     ? `<div class="qr">
@@ -1066,15 +1121,15 @@ const Payment = () => {
               margin: "0 auto",
             }}
           >
-            <img
-              src={result.qr_image}
-              alt="QR Code สำหรับชำระเงิน"
-              style={{
-                width: "200px",
-                height: "200px",
-                borderRadius: "8px",
-              }}
-            />
+            {result?.qr_image ? (
+              <img
+                src={result.qr_image}
+                alt="QR Code สำหรับชำระเงิน"
+                style={{ width: "200px", height: "200px", borderRadius: "8px" }}
+              />
+            ) : (
+              <p>กำลังสร้าง QR Code...</p>
+            )}
           </div>
 
           {/* ยอดชำระ */}

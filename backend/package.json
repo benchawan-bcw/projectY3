@@ -32,8 +32,8 @@
   "license": "ISC",
   "devDependencies": {
     "axios": "^1.13.2",
-    "chai": "^6.2.0",
-    "chai-http": "^5.1.2",
+    "chai": "^4.5.0",
+    "chai-http": "^4.4.0",
     "mocha": "^11.7.5",
     "mongodb-memory-server": "^10.3.0",
     "newman": "^6.2.1",

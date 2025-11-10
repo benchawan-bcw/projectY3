@@ -14,7 +14,6 @@ const {
   updatePaymentForQrCode,
   editParcel,
   deleteParcel,
-  getByBillOnDate,
 } = require("../controllers/adminController");
 
 //middleware
@@ -31,6 +30,5 @@ router.put("/updatePayment", updatePayment);
 router.put("/updatePaymentForQrCode", updatePaymentForQrCode);
 router.put("/editParcel/:id", editParcel);
 router.delete("/deleteParcel/:id", deleteParcel);
-router.get("/getByBillOnDate", getByBillOnDate);
 
 module.exports = router;

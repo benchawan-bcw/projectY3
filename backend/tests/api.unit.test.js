@@ -3,14 +3,14 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const path = require("path");
 const fs = require("fs");
 const request = require("supertest");
-// const chai = require("chai");
-// const chaiHttp = require("chai-http");
+const chai = require("chai");
+const chaiHttp = require("chai-http");
 const sinon = require("sinon");
 const axios = require("axios");
 const app = require("../server");
-// chai.use(chaiHttp);
+chai.use(chaiHttp);
 // const expect = chai.expect;
-const { expect } = require("chai");
+const { expect } = chai;
 const { describe } = require("mocha");
 
 const Parcels = require("../models/parcels");
@@ -495,168 +495,244 @@ describe("Users API (supertest)", function () {
     });
   });
 
-  // // ===== POST selectPayment =====
-  // describe("POST /admin-ban-poolsub/selectPayment", function () {
-  //   it("should return 400 if paymentMethod or total_price missing", async () => {
-  //     const res = await chai
-  //       .request(app)
-  //       .post("/admin-ban-poolsub/selectPayment")
-  //       .set("Authorization", authHeader)
-  //       .send({});
-  //     expect(res).to.have.status(400);
-  //     expect(res.body.message).to.equal("กรุณาระบุช่องทางชำระเงินและยอดรวม");
-  //   });
+  // ===== POST selectPayment =====
+  describe("POST /admin-ban-poolsub/selectPayment", function () {
+    it("should return 400 if paymentMethod or total_price missing", async () => {
+      const res = await chai
+        .request(app)
+        .post("/admin-ban-poolsub/selectPayment")
+        .set("Authorization", authHeader)
+        .send({});
+      expect(res).to.have.status(400);
+      expect(res.body.message).to.equal("กรุณาระบุช่องทางชำระเงินและยอดรวม");
+    });
 
-  //   it("should process cash payment correctly", async () => {
-  //     const res = await chai
-  //       .request(app)
-  //       .post("/admin-ban-poolsub/selectPayment")
-  //       .set("Authorization", authHeader)
-  //       .send({ paymentMethod: "cash", total_price: 100, customer_paid: 150 });
-  //     expect(res).to.have.status(200);
-  //     expect(res.body).to.have.property("change");
-  //   });
+    it("should process cash payment correctly", async () => {
+      const res = await chai
+        .request(app)
+        .post("/admin-ban-poolsub/selectPayment")
+        .set("Authorization", authHeader)
+        .send({ paymentMethod: "cash", total_price: 100, customer_paid: 150 });
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("change");
+    });
 
-  //   it("should generate QR for qr payment", async () => {
-  //     const res = await chai
-  //       .request(app)
-  //       .post("/admin-ban-poolsub/selectPayment")
-  //       .set("Authorization", authHeader)
-  //       .send({ paymentMethod: "qr", total_price: 100 });
-  //     expect(res).to.have.status(200);
-  //     expect(res.body).to.have.property("qrCode"); // ขึ้นกับ generateQrPayment จริง
-  //   });
+    it("should generate QR for qr payment", async () => {
+      const res = await chai
+        .request(app)
+        .post("/admin-ban-poolsub/selectPayment")
+        .set("Authorization", authHeader)
+        .send({ paymentMethod: "qr", total_price: 100 });
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("qrCode"); // ขึ้นกับ generateQrPayment จริง
+    });
 
-  //   it("should return 400 for invalid paymentMethod", async () => {
-  //     const res = await chai
-  //       .request(app)
-  //       .post("/admin-ban-poolsub/selectPayment")
-  //       .set("Authorization", authHeader)
-  //       .send({ paymentMethod: "invalid", total_price: 100 });
-  //     expect(res).to.have.status(400);
-  //     expect(res.body.message).to.equal("ช่องทางชำระเงินไม่ถูกต้อง");
-  //   });
-  // });
+    it("should return 400 for invalid paymentMethod", async () => {
+      const res = await chai
+        .request(app)
+        .post("/admin-ban-poolsub/selectPayment")
+        .set("Authorization", authHeader)
+        .send({ paymentMethod: "invalid", total_price: 100 });
+      expect(res).to.have.status(400);
+      expect(res.body.message).to.equal("ช่องทางชำระเงินไม่ถูกต้อง");
+    });
+  });
+
+  // ===== PUT updatePaymentForQrCode =====
+  describe("PUT /admin-ban-poolsub/updatePaymentForQrCode", function () {
+    let bulkWriteStub;
+
+    beforeEach(() => {
+      bulkWriteStub = sinon.stub(Parcels, "bulkWrite");
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    // กรณี 1: ไม่ส่ง parcels -> 400
+    it("should return 400 if parcels not provided", async () => {
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePaymentForQrCode")
+        .set("Authorization", authHeader)
+        .send({
+          payment_method: "qr",
+          customer_paid: 100,
+          receipt_number: "RC12345",
+        });
+
+      expect(res).to.have.status(400);
+      expect(res.body)
+        .to.have.property("message")
+        .that.equals("ต้องระบุพัสดุที่จะอัปเดต");
+    });
+
+    // กรณี 2: ส่ง parcels = [] -> 400
+    it("should return 400 if parcels array is empty", async () => {
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePaymentForQrCode")
+        .set("Authorization", authHeader)
+        .send({ parcels: [] });
+
+      expect(res).to.have.status(400);
+      expect(res.body)
+        .to.have.property("message")
+        .that.equals("ต้องระบุพัสดุที่จะอัปเดต");
+    });
+
+    // กรณี 3: อัปเดตสำเร็จ (200)
+    it("should update payment successfully", async () => {
+      bulkWriteStub.resolves({ modifiedCount: 2 });
+
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePaymentForQrCode")
+        .set("Authorization", authHeader)
+        .send({
+          parcels: [
+            { _id: new mongoose.Types.ObjectId(), total_price: 100 },
+            { _id: new mongoose.Types.ObjectId(), total_price: 200 },
+          ],
+          payment_method: "qr",
+          customer_paid: 300,
+          receipt_number: "RC999",
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("modifiedCount", 2);
+      expect(res.body.message).to.include("อัปเดตข้อมูลการชำระเงินเรียบร้อย");
+    });
+
+    // กรณี 4: ไม่มีพัสดุในฐานข้อมูล (bulkWrite คืนค่า modifiedCount = 0)
+    it("should return 404 if no parcels were updated", async () => {
+      bulkWriteStub.resolves({ modifiedCount: 0 });
+
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePaymentForQrCode")
+        .set("Authorization", authHeader)
+        .send({
+          parcels: [{ _id: new mongoose.Types.ObjectId(), total_price: 100 }],
+          payment_method: "qr",
+          customer_paid: 100,
+          receipt_number: "RC404",
+        });
+
+      expect(res).to.have.status(404); // ❗ ถ้าอยากให้เป็น 404 ต้องแก้ใน controller ด้วย
+      expect(res.body.modifiedCount).to.equal(0);
+      expect(res.body.message).to.include("ไม่พบพัสดุ");
+    });
+
+    // กรณี 5: เกิดข้อผิดพลาดในฐานข้อมูล (throw error)
+    it("should handle database errors gracefully", async () => {
+      bulkWriteStub.rejects(new Error("Database connection failed"));
+
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePaymentForQrCode")
+        .set("Authorization", authHeader)
+        .send({
+          parcels: [{ _id: new mongoose.Types.ObjectId(), total_price: 100 }],
+          payment_method: "qr",
+          customer_paid: 100,
+          receipt_number: "RCERR",
+        });
+
+      expect(res).to.have.status(500);
+      expect(res.body)
+        .to.have.property("message")
+        .that.equals("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
+      expect(res.body.error).to.include("Database connection failed");
+    });
+  });
 
   // ===== PUT updatePayment =====
   describe("PUT /admin-ban-poolsub/updatePayment", function () {
-    afterEach(async () => {
-      await Parcels.deleteMany({});
+    let bulkWriteStub;
+
+    beforeEach(() => {
+      bulkWriteStub = sinon.stub(Parcels, "bulkWrite");
     });
 
-    it("should update payment successfully", async function () {
-      const parcel = await Parcels.create({
-        ...newParcel,
-        tracking_number: `EM${Date.now()}_PUT`,
-      });
-
-      const payload = {
-        total_price: 120,
-        net_price: 110,
-        payment_method: "Cash",
-        customer_paid: 120,
-      };
-
-      const res = await request(app)
-        .put("/admin-ban-poolsub/updatePayment")
-        .send(payload)
-        .set("Authorization", authHeader)
-        .expect(200);
-
-      expect(res.body).to.have.property(
-        "message",
-        "อัปเดตข้อมูลการชำระเงินสำเร็จ"
-      );
-      expect(res.body.parcel).to.have.property(
-        "tracking_number",
-        parcel.tracking_number
-      );
-      expect(res.body.parcel).to.have.property(
-        "total_price",
-        payload.total_price
-      );
-      expect(res.body.parcel).to.have.property("net_price", payload.net_price);
-      expect(res.body.parcel).to.have.property(
-        "payment_method",
-        payload.payment_method
-      );
-      expect(res.body.parcel).to.have.property(
-        "customer_paid",
-        payload.customer_paid
-      );
-      expect(res.body.parcel).to.have.property(
-        "payment_status",
-        "ชำระเงินเรียบร้อย"
-      );
-      expect(res.body.parcel.receipt_number).to.match(/^BILL-\d{6}$/);
+    afterEach(() => {
+      sinon.restore();
     });
 
-    it("should return 404 if no parcels in database", async function () {
-      const payload = {
-        total_price: 120,
-        net_price: 110,
-        payment_method: "Cash",
-        customer_paid: 120,
-      };
-
-      const res = await request(app)
+    // ===== 400: parcels ไม่ส่ง =====
+    it("should return 400 if parcels not provided", async () => {
+      const res = await chai
+        .request(app)
         .put("/admin-ban-poolsub/updatePayment")
-        .send(payload)
         .set("Authorization", authHeader)
-        .expect(404);
+        .send({
+          net_price: 100,
+          payment_method: "cash",
+          customer_paid: 100,
+        });
 
-      expect(res.body).to.have.property("message", "ไม่พบพัสดุในระบบ");
+      expect(res).to.have.status(400);
+      expect(res.body.message).to.equal("ต้องระบุพัสดุที่จะอัปเดต");
     });
 
-    it("should return 404 if parcel to update not found", async function () {
-      const parcel = await Parcels.create({
-        ...newParcel,
-        tracking_number: `EM${Date.now()}_PUT`,
-      });
-
-      // stub ให้ findOneAndUpdate คืนค่า null
-      sinon.stub(Parcels, "findOneAndUpdate").resolves(null);
-
-      const payload = {
-        total_price: 120,
-        net_price: 110,
-        payment_method: "Cash",
-        customer_paid: 120,
-      };
-
-      const res = await request(app)
+    // ===== 400: parcels ว่าง =====
+    it("should return 400 if parcels array is empty", async () => {
+      const res = await chai
+        .request(app)
         .put("/admin-ban-poolsub/updatePayment")
-        .send(payload)
         .set("Authorization", authHeader)
-        .expect(404);
+        .send({
+          parcels: [],
+          net_price: 100,
+          payment_method: "cash",
+          customer_paid: 100,
+        });
 
-      expect(res.body).to.have.property(
-        "message",
-        "ไม่พบข้อมูลพัสดุที่ต้องการอัปเดต"
-      );
+      expect(res).to.have.status(400);
+      expect(res.body.message).to.equal("ต้องระบุพัสดุที่จะอัปเดต");
     });
 
-    it("should handle database errors gracefully", async function () {
-      sinon.stub(Parcels, "findOne").throws(new Error("DB failure"));
+    // ===== 200: อัปเดตสำเร็จ =====
+    it("should update payment successfully", async () => {
+      bulkWriteStub.resolves({ modifiedCount: 2 });
 
-      const payload = {
-        total_price: 120,
-        net_price: 110,
-        payment_method: "Cash",
-        customer_paid: 120,
-      };
-
-      const res = await request(app)
+      const res = await chai
+        .request(app)
         .put("/admin-ban-poolsub/updatePayment")
-        .send(payload)
         .set("Authorization", authHeader)
-        .expect(500);
+        .send({
+          parcels: [
+            { id: new mongoose.Types.ObjectId(), total_price: 100 },
+            { id: new mongoose.Types.ObjectId(), total_price: 200 },
+          ],
+          net_price: 300,
+          payment_method: "cash",
+          customer_paid: 300,
+        });
 
-      expect(res.body).to.have.property(
-        "message",
-        "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์"
-      );
-      expect(res.body).to.have.property("error", "DB failure");
+      expect(res).to.have.status(200);
+      expect(res.body.message).to.include("อัปเดตข้อมูลการชำระเงินเรียบร้อย");
+    });
+
+    // ===== 500: เกิดข้อผิดพลาดฐานข้อมูล =====
+    it("should handle database errors gracefully", async () => {
+      bulkWriteStub.rejects(new Error("Database failure"));
+
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePayment")
+        .set("Authorization", authHeader)
+        .send({
+          parcels: [{ id: new mongoose.Types.ObjectId(), total_price: 100 }],
+          net_price: 100,
+          payment_method: "cash",
+          customer_paid: 100,
+        });
+
+      expect(res).to.have.status(500);
+      expect(res.body.message).to.equal("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
+      expect(res.body.error).to.equal("Database failure");
     });
   });
 });
