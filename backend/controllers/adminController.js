@@ -177,9 +177,9 @@ exports.deleteParcel = async (req, res) => {
   try {
     const parcelId = req.params.id;
     const deletedParcel = await Parcels.findOneAndDelete({ _id: parcelId });
-    res.json(deletedParcel);
+    res.status(200).json({ message: "ลบข้อมูลพัสดุสําเร็จ", deletedParcel });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(404).json({ message: "ไม่พบข้อมูลพัสดุ" });
   }
 };
 

@@ -70,8 +70,15 @@ exports.getTrackByTrackingNumber = async (req, res) => {
     );
 
     const data = await trackRes.json();
+    
+    const item = data.response?.items?.[trackingNumber];
+    if (!item) {
+      return res
+        .status(404)
+        .json({ message: `Tracking number ${trackingNumber} not found` });
+    }
 
-    res.json(data.response.items[trackingNumber]);
+    res.json(item);
   } catch (err) {
     console.error("เกิดข้อผิดพลาด:", err);
     res.status(500).json({ message: "Server error" });
