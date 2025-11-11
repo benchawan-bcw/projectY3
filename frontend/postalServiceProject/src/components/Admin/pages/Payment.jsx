@@ -376,13 +376,13 @@ const Payment = () => {
                 </div>
               `
           }
-
-
       <div class="line"></div>
       <br>
       </div>
+      `);
+        });
 
-      
+        printWindow.document.write(`
       <div style="display:flex; justify-content:space-between;">
                   <span><b>ค่าอุปกรณ์ทั้งหมด:</b></span>
                   <span>${
@@ -402,28 +402,19 @@ const Payment = () => {
       <div style="display:flex; justify-content:space-between;">
                   <span><b>เงินสด:</b></span>
                     <span>${
-                      paymentMethod === "cash"
-                        ? customerPaid
-                        : p.total_price || 0
+                      paymentMethod === "cash" ? customerPaid : 0
                     }.-</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
                   <span><b>เงินทอน:</b></span>
                   <span>${
                     paymentMethod === "cash"
-                      ? (p.customer_paid || 0) - totalPriceNumber
+                      ? (updatedParcels[0]?.customer_paid || 0) -
+                        totalPriceNumber
                       : 0
                   }.-</span>
                 </div>
-      `);
-
-      
-    });
-    printWindow.document.write(`
-      
-    `);
-
-        printWindow.document.write(`
+          
           <div class="footer">
             @@@ ขอบคุณที่ใช้บริการค่ะ @@@
           </div>

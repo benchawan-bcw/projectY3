@@ -394,25 +394,41 @@ exports.updatePayment = async (req, res) => {
     const receipt_number =
       "BILL-" + Math.floor(100000 + Math.random() * 900000).toString();
 
-    const bulkOps = parcels.map((p) => ({
-      updateOne: {
-        filter: { _id: p.id },
-        update: {
-          $set: {
-            total_price: p.total_price, // ราคาของแต่ละพัสดุ
-            net_price,
-            receipt_number,
-            customer_paid:
-              payment_method === "cash" ? customer_paid : p.total_price,
-            payment_method,
-            payment_status: "ชำระเงินเรียบร้อย",
-            update_at: new Date(),
+    const bulkOps = parcels.map((p) => {
+      if (!Types.ObjectId.isValid(p._id)) {
+        throw new Error(`_id ของพัสดุไม่ถูกต้อง: ${p._id}`);
+      }
+      const objectId = new Types.ObjectId(p._id);
+
+      return {
+        updateOne: {
+          filter: { _id: objectId },
+          update: {
+            $set: {
+              total_price: p.total_price, // ราคาของแต่ละพัสดุ
+              net_price,
+              receipt_number,
+              customer_paid:
+                payment_method === "cash" ? customer_paid : p.total_price,
+              payment_method,
+              payment_status: "ชำระเงินเรียบร้อย",
+              update_at: new Date(),
+            },
           },
         },
-      },
-    }));
+      };
+    });
 
     const result = await Parcels.bulkWrite(bulkOps);
+
+    const modifiedCount = result.modifiedCount || 0; // ป้องกัน undefined
+
+    if (modifiedCount === 0) {
+      return res.status(404).json({
+        message: "ไม่พบพัสดุที่ต้องการอัปเดต",
+        modifiedCount,
+      });
+    }
 
     res.status(200).json({
       message: `อัปเดตข้อมูลการชำระเงินเรียบร้อย ${result.modifiedCount} พัสดุ`,
