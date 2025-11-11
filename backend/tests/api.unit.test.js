@@ -653,30 +653,34 @@ describe("Users API (supertest)", function () {
     let bulkWriteStub;
 
     beforeEach(() => {
+      // stub bulkWrite ของ Mongoose model
       bulkWriteStub = sinon.stub(Parcels, "bulkWrite");
     });
 
     afterEach(() => {
-      sinon.restore();
+      // restore stub หลังแต่ละ test
+      bulkWriteStub.restore();
     });
 
-    // ===== 400: parcels ไม่ส่ง =====
+    // กรณี 1: ไม่ส่ง parcels -> 400
     it("should return 400 if parcels not provided", async () => {
       const res = await chai
         .request(app)
         .put("/admin-ban-poolsub/updatePayment")
         .set("Authorization", authHeader)
         .send({
-          net_price: 100,
+          net_price: 500,
           payment_method: "cash",
-          customer_paid: 100,
+          customer_paid: 500,
         });
 
       expect(res).to.have.status(400);
-      expect(res.body.message).to.equal("ต้องระบุพัสดุที่จะอัปเดต");
+      expect(res.body)
+        .to.have.property("message")
+        .that.equals("ต้องระบุพัสดุที่จะอัปเดต");
     });
 
-    // ===== 400: parcels ว่าง =====
+    // กรณี 2: ส่ง parcels = [] -> 400
     it("should return 400 if parcels array is empty", async () => {
       const res = await chai
         .request(app)
@@ -684,17 +688,19 @@ describe("Users API (supertest)", function () {
         .set("Authorization", authHeader)
         .send({
           parcels: [],
-          net_price: 100,
+          net_price: 500,
           payment_method: "cash",
-          customer_paid: 100,
+          customer_paid: 500,
         });
 
       expect(res).to.have.status(400);
-      expect(res.body.message).to.equal("ต้องระบุพัสดุที่จะอัปเดต");
+      expect(res.body)
+        .to.have.property("message")
+        .that.equals("ต้องระบุพัสดุที่จะอัปเดต");
     });
 
-    // ===== 200: อัปเดตสำเร็จ =====
-    it("should update payment successfully", async () => {
+    // กรณี 3: อัปเดตสำเร็จ (cash) -> 200
+    it("should update payment successfully with cash", async () => {
       bulkWriteStub.resolves({ modifiedCount: 2 });
 
       const res = await chai
@@ -703,28 +709,70 @@ describe("Users API (supertest)", function () {
         .set("Authorization", authHeader)
         .send({
           parcels: [
-            { id: new mongoose.Types.ObjectId(), total_price: 100 },
-            { id: new mongoose.Types.ObjectId(), total_price: 200 },
+            { _id: new mongoose.Types.ObjectId(), total_price: 150 },
+            { _id: new mongoose.Types.ObjectId(), total_price: 250 },
           ],
-          net_price: 300,
+          net_price: 400,
           payment_method: "cash",
-          customer_paid: 300,
+          customer_paid: 500,
         });
 
       expect(res).to.have.status(200);
+      expect(res.body).to.have.property("message");
       expect(res.body.message).to.include("อัปเดตข้อมูลการชำระเงินเรียบร้อย");
     });
 
-    // ===== 500: เกิดข้อผิดพลาดฐานข้อมูล =====
-    it("should handle database errors gracefully", async () => {
-      bulkWriteStub.rejects(new Error("Database failure"));
+    // กรณี 4: อัปเดตสำเร็จ (non-cash) -> 200
+    it("should update payment successfully with non-cash", async () => {
+      bulkWriteStub.resolves({ modifiedCount: 2 });
 
       const res = await chai
         .request(app)
         .put("/admin-ban-poolsub/updatePayment")
         .set("Authorization", authHeader)
         .send({
-          parcels: [{ id: new mongoose.Types.ObjectId(), total_price: 100 }],
+          parcels: [
+            { _id: new mongoose.Types.ObjectId(), total_price: 300 },
+            { _id: new mongoose.Types.ObjectId(), total_price: 400 },
+          ],
+          net_price: 700,
+          payment_method: "credit",
+          customer_paid: 0,
+        });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("message");
+      expect(res.body.message).to.include("อัปเดตข้อมูลการชำระเงินเรียบร้อย");
+    });
+
+    // กรณี 5: ไม่มีพัสดุถูกอัปเดต -> 404
+    it("should return 404 if no parcels were updated", async () => {
+      bulkWriteStub.resolves({ modifiedCount: 0 });
+
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePayment")
+        .set("Authorization", authHeader)
+        .send({
+          parcels: [{ _id: new mongoose.Types.ObjectId(), total_price: 100 }],
+          net_price: 100,
+          payment_method: "cash",
+          customer_paid: 100,
+        });
+
+      expect(res).to.have.status(404);
+      expect(res.body.modifiedCount).to.equal(0);
+      expect(res.body.message).to.include("ไม่พบพัสดุ");
+    });
+
+    // กรณี 6: _id ไม่ถูกต้อง -> 500
+    it("should return 500 if _id is invalid", async () => {
+      const res = await chai
+        .request(app)
+        .put("/admin-ban-poolsub/updatePayment")
+        .set("Authorization", authHeader)
+        .send({
+          parcels: [{ _id: "123", total_price: 100 }],
           net_price: 100,
           payment_method: "cash",
           customer_paid: 100,
@@ -732,7 +780,7 @@ describe("Users API (supertest)", function () {
 
       expect(res).to.have.status(500);
       expect(res.body.message).to.equal("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
-      expect(res.body.error).to.equal("Database failure");
+      expect(res.body.error).to.include("_id ของพัสดุไม่ถูกต้อง");
     });
   });
 });
