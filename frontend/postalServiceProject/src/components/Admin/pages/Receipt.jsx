@@ -63,15 +63,15 @@ const Receipt = () => {
   const extractAddressData = (address) => {
     if (!address) return { province: "-", zipcode: "-" };
 
-    // ดึงรหัสไปรษณีย์
+    // ดึงรหัสไปรษณีย์ (5 ตัวท้าย)
     const zipMatch = address.match(/\d{5}$/);
     const zipcode = zipMatch ? zipMatch[0] : "-";
 
-    // ดึงชื่อจังหวัด
-    const provinceMatch = address.match(/(?:จังหวัด|จ\.)\s*([ก-ฮ\s]{2,})/);
-    const province = provinceMatch
-      ? provinceMatch[1].trim().replace(/\s+/g, " ")
-      : "-";
+    // ดึงชื่อจังหวัด ให้ครบ เช่น "นครศรีธรรมราช", "สมุทรปราการ"
+    const provinceMatch = address.match(
+      /(?:จังหวัด|จ\.)\s*([ก-ฮ]+(?:\s*[ก-ฮ]+)*)/
+    );
+    const province = provinceMatch ? provinceMatch[1].trim() : "-";
 
     return { province, zipcode };
   };
