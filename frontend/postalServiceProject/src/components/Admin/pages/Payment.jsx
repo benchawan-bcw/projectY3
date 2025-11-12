@@ -166,15 +166,25 @@ const Payment = () => {
   const extractAddressData = (address) => {
     if (!address) return { province: "-", zipcode: "-" };
 
-    // ดึงรหัสไปรษณีย์
+    // ดึงรหัสไปรษณีย์ (5 ตัวท้าย)
     const zipMatch = address.match(/\d{5}$/);
     const zipcode = zipMatch ? zipMatch[0] : "-";
 
-    // ดึงชื่อจังหวัด
-    const provinceMatch = address.match(/(?:จังหวัด|จ\.)\s*([ก-ฮ\s]{2,})/);
-    const province = provinceMatch
-      ? provinceMatch[1].trim().replace(/\s+/g, " ")
-      : "-";
+    let province = "-";
+
+    // 1. ถ้ามี "จ." หรือ "จังหวัด" ให้เอาชื่อหลังคำเหล่านี้
+    const provinceMatch = address.match(
+      /(?:จ\.|จังหวัด)\s*([\u0E00-\u0E7F]+)/u
+    );
+    if (provinceMatch) {
+      province = provinceMatch[1].trim();
+    } else {
+      // fallback: คำไทยตัวสุดท้ายก่อนเลข 5 หลัก
+      const fallbackMatch = address.match(/([\u0E00-\u0E7F]+)\s*\d{5}$/u);
+      if (fallbackMatch) {
+        province = fallbackMatch[1].trim();
+      }
+    }
 
     return { province, zipcode };
   };
@@ -313,36 +323,43 @@ const Payment = () => {
 
           printWindow.document.write(`
             <div class="receipt">
-            <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
-            <div style="display: flex; justify-content: space-between;">
-              <span>${zipcode || "-"}</span>
-              <span>${province || "-"}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between;">
-              <span><b>กล่อง / ซอง:</b></span>
-              <span>${
-                getEquipmentPrice(p.equipment, "กล่อง") ||
-                getEquipmentPrice(p.equipment, "ซอง")
-              }.-</span>
-            </div>
-            <div style="display:flex; justify-content:space-between;">
-              <span><b>รัดกล่อง:</b></span>
-              <span>${getEquipmentPrice(p.equipment, "เชือก") || 0}.-</span>
-            </div>
-            <div style="display:flex; justify-content:space-between;">
-              <span><b>บับเบิ้ล:</b></span>
-              <span>${getEquipmentPrice(p.equipment, "บับเบิ้ล") || 0}.-</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span><b>น้ำหนัก:</b> ${
-                p.weight ? (p.weight / 1000).toFixed(2) + " kg" : "-"
-              }</span>
-              <span>${p.tracking_number || "-"}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding-right: 5px;">
-              <span><b>EMS:</b></span>
-              <span>${p.shipping_cost || 0}.-</span>
-            </div>
+             <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
+               <div  style="display: flex; align-items: flex-start;">
+                <!-- รหัสไปรษณีย์ ชิดซ้าย -->
+                <div style="margin-right: 10px;">${zipcode || "-"}</div>
+
+                <!-- จังหวัด ชิดขวา และขยายเต็มพื้นที่ -->
+                <div  class="word-break-thai" style="flex: 1; text-align: right; white-space: normal; overflow-wrap: break-word;">
+                  ${province || "-"}
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span><b>กล่อง / ซอง:</b></span>
+                <span>${
+                  getEquipmentPrice(p.equipment, "กล่อง") ||
+                  getEquipmentPrice(p.equipment, "ซอง")
+                }.-</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span><b>รัดกล่อง:</b></span>
+                <span>${getEquipmentPrice(p.equipment, "เชือก") || 0}.-</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span><b>บับเบิ้ล:</b></span>
+                <span>${
+                  getEquipmentPrice(p.equipment, "บับเบิ้ล") || 0
+                }.-</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span><b>น้ำหนัก:</b> ${
+                  p.weight ? (p.weight / 1000).toFixed(2) + " kg" : "-"
+                }</span>
+                <span>${p.tracking_number || "-"}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding-right: 5px;">
+                <span><b>EMS:</b></span>
+                <span>${p.shipping_cost || 0}.-</span>
+              </div>
 
         <div >---------------------</div>
           ${

@@ -16,6 +16,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.word-break-thai {
+  word-break: break-all;       /* ตัดบรรทัดแม้ไม่มี space */
+  white-space: normal;         /* อนุญาตให้ wrap */
+  overflow-wrap: break-word;   /* สำหรับ browser รุ่นใหม่ */
+}
+
 a {
   font-weight: 500;
   color: #646cff;
