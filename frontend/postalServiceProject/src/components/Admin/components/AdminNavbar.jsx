@@ -23,12 +23,7 @@ const AdminNavbar = () => {
       label: "คำนวณค่าจัดส่งพัสดุ",
       icon: "bi-calculator",
     },
-    { to: "/admin/Receipt", label: "พิมพ์ใบเสร็จ", icon: "bi-receipt" },
-    {
-      to: "/admin/ParcelReport",
-      label: "รายงานสถิติพัสดุ",
-      icon: "bi-bar-chart-line",
-    },
+    { to: "/admin/Receipt", label: "พิมพ์ใบเสร็จ", icon: "bi-receipt" }
   ];
 
   return (
