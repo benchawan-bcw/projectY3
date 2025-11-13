@@ -403,7 +403,7 @@ const Payment = () => {
       <div style="display:flex; justify-content:space-between;">
                   <span><b>ค่าอุปกรณ์ทั้งหมด:</b></span>
                   <span>${
-                    paymentMethod === "cash" ? totalPriceNumber : 0
+                    paymentMethod === "cash" ? totalEquipmentPrice : 0
                   }.-</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">

@@ -67,11 +67,21 @@ const Receipt = () => {
     const zipMatch = address.match(/\d{5}$/);
     const zipcode = zipMatch ? zipMatch[0] : "-";
 
-    // ดึงชื่อจังหวัด ให้ครบ เช่น "นครศรีธรรมราช", "สมุทรปราการ"
+    let province = "-";
+
+    // 1. ถ้ามี "จ." หรือ "จังหวัด" ให้เอาชื่อหลังคำเหล่านี้
     const provinceMatch = address.match(
-      /(?:จังหวัด|จ\.)\s*([ก-ฮ]+(?:\s*[ก-ฮ]+)*)/
+      /(?:จ\.|จังหวัด)\s*([\u0E00-\u0E7F]+)/u
     );
-    const province = provinceMatch ? provinceMatch[1].trim() : "-";
+    if (provinceMatch) {
+      province = provinceMatch[1].trim();
+    } else {
+      // fallback: คำไทยตัวสุดท้ายก่อนเลข 5 หลัก
+      const fallbackMatch = address.match(/([\u0E00-\u0E7F]+)\s*\d{5}$/u);
+      if (fallbackMatch) {
+        province = fallbackMatch[1].trim();
+      }
+    }
 
     return { province, zipcode };
   };
