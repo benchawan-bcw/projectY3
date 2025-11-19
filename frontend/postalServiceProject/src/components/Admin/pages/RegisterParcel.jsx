@@ -22,11 +22,11 @@ const RegisterParcel = () => {
   const [serviceType] = useState("EMS");
   const [shippingCost, setShippingCost] = useState(0);
 
+  const [equipment, setEquipment] = useState([]);
   const [boxes, setBoxes] = useState([]);
   const [envelopes, setEnvelopes] = useState([]);
   const [ties, setTies] = useState([]);
   const [bubble_wrap, setBubble_wrap] = useState([]);
-  const [equipment, setEquipment] = useState([]);
   const [selectedEquipment, setSelectedEquipment] = useState([]);
   const [totalEquipment, setTotalEquipment] = useState(0);
 
@@ -35,6 +35,8 @@ const RegisterParcel = () => {
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const token = localStorage.getItem("token");
 
   const handleScan = (e) => {
     if (e.key === "Enter") {
@@ -71,9 +73,8 @@ const RegisterParcel = () => {
           packagingCost,
         },
         {
-          auth: {
-            username: "admin",
-            password: "bands",
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -107,39 +108,45 @@ const RegisterParcel = () => {
   // อุปกรณ์
   useEffect(() => {
     axios
-      .get("http://localhost:4000/admin-ban-poolsub/equipment", {
-        auth: {
-          username: "admin",
-          password: "bands",
+      .get("http://localhost:4000/admin-ban-poolsub/getEquipment", {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       })
       .then((res) => {
-        setBoxes(res.data.boxes || []);
-        setEnvelopes(res.data.envelopes || []);
-        setTies(res.data.ties || []);
-        setBubble_wrap(res.data.bubble_wrap || []);
+        const data = res.data || [];
+        setEquipment(data);
+
+        // แยกตามประเภทชื่อ (คุณสามารถปรับ keyword ให้ตรงกับชื่อจริงใน DB)
+        setBoxes(data.filter((e) => e.name.includes("กล่อง")));
+        setEnvelopes(data.filter((e) => e.name.includes("ซอง")));
+        setTies(data.filter((e) => e.name.includes("เชือก")));
+        setBubble_wrap(data.filter((e) => e.name.includes("บับเบิ้ล")));
       })
-      .catch((err) => console.error("ไม่สามารถโหลดข้อมูลอุปกรณ์:", err));
+      .catch((err) => {
+        console.error("ไม่สามารถโหลดข้อมูลอุปกรณ์:", err);
+        console.log(
+          "รายละเอียด error:",
+          err.response ? err.response.data : err
+        );
+      });
   }, []);
 
   if (!equipment) return <p>กำลังโหลดอุปกรณ์...</p>;
 
   const handleAddItem = (category, item) => {
-    setSelectedEquipment((prev) => [...prev, item]);
-
-    const total = [...selectedEquipment, item].reduce(
-      (sum, i) => sum + i.price,
-      0
-    );
-    setTotalEquipment(total);
+    setSelectedEquipment((prev) => {
+      const updated = [...prev, item];
+      setTotalEquipment(updated.reduce((sum, i) => sum + i.price, 0));
+      return updated;
+    });
   };
 
   // ฟังก์ชันลบอุปกรณ์
   const handleRemoveItem = (index) => {
     setSelectedEquipment((prev) => {
-      const updated = prev.filter((_, i) => i !== index); // ลบตัวที่กด
-      const total = updated.reduce((sum, item) => sum + item.price, 0);
-      setTotalEquipment(total); // คำนวณราคารวมใหม่
+      const updated = prev.filter((_, i) => i !== index);
+      setTotalEquipment(updated.reduce((sum, i) => sum + i.price, 0));
       return updated;
     });
   };
@@ -169,6 +176,7 @@ const RegisterParcel = () => {
       >
         {categoryName}
       </Dropdown.Toggle>
+
       <Dropdown.Menu
         style={{
           backgroundColor: "#FFFFFF",
@@ -178,31 +186,28 @@ const RegisterParcel = () => {
           padding: "6px 0",
         }}
       >
-        {categoryData.map((item, idx) => {
-          const names = Array.isArray(item.name) ? item.name : [item.name];
-          return names.map((name) => (
-            <Dropdown.Item
-              key={categoryKey + idx + name}
-              onClick={() =>
-                handleAddItem(categoryKey, { name, price: item.price })
-              }
-              style={{
-                color: textColor,
-                fontSize:
-                  size === "sm"
-                    ? "0.875rem"
-                    : size === "lg"
-                    ? "1.125rem"
-                    : "1rem",
-                padding: "10px 16px",
-                transition: "all 0.2s ease",
-              }}
-              className="hover:bg-[#FEFBC7] hover:text-[#E14434]"
-            >
-              {name} ({item.price} บาท)
-            </Dropdown.Item>
-          ));
-        })}
+        {categoryData.map((item, idx) => (
+          <Dropdown.Item
+            key={categoryKey + idx}
+            onClick={() =>
+              handleAddItem(categoryKey, { name: item.name, price: item.price })
+            }
+            style={{
+              color: textColor,
+              fontSize:
+                size === "sm"
+                  ? "0.875rem"
+                  : size === "lg"
+                  ? "1.125rem"
+                  : "1rem",
+              padding: "10px 16px",
+              transition: "all 0.2s ease",
+            }}
+            className="hover:bg-[#FEFBC7] hover:text-[#E14434]"
+          >
+            {item.name} ({item.price} บาท)
+          </Dropdown.Item>
+        ))}
       </Dropdown.Menu>
     </Dropdown>
   );
@@ -288,11 +293,10 @@ const RegisterParcel = () => {
           net_price: netPrice,
         },
         {
-          auth: {
-            username: "admin",
-            password: "bands",
-          },
-        }
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
       );
 
       setMessage(res.data.message || "ลงทะเบียนพัสดุสำเร็จ");
@@ -561,6 +565,7 @@ const RegisterParcel = () => {
                 categoryData={boxes}
                 categoryKey="boxes"
                 size="lg"
+                handleAddItem={handleAddItem}
               />
             </div>
 
@@ -574,6 +579,7 @@ const RegisterParcel = () => {
                 categoryData={envelopes}
                 categoryKey="envelopes"
                 size="lg"
+                handleAddItem={handleAddItem}
               />
             </div>
 
@@ -587,6 +593,7 @@ const RegisterParcel = () => {
                 categoryData={ties}
                 categoryKey="ties"
                 size="lg"
+                handleAddItem={handleAddItem}
               />
             </div>
 
@@ -600,6 +607,7 @@ const RegisterParcel = () => {
                 categoryData={bubble_wrap}
                 categoryKey="bubble_wrap"
                 size="lg"
+                handleAddItem={handleAddItem}
               />
             </div>
           </div>

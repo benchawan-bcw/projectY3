@@ -1,34 +1,111 @@
 const express = require("express");
 const router = express.Router();
+const { verifyToken } = require("../middleware/authCheck");
+const adminController = require("../controllers/adminController"); // <-- import แบบ object เดียว
 
-const ipCheck = require("../middleware/ipCheck");
-const adminAuth = require("../middleware/basicAuth");
+// Dashboard
+router.get(
+  "/dashboard",
+  verifyToken(["admin", "super_admin"]),
+  adminController.dashboard
+);
 
-const {
-  registerParcel,
-  getParcels,
-  calculateEms,
-  equipment,
-  selectPayment,
-  updatePayment,
-  updatePaymentForQrCode,
-  editParcel,
-  deleteParcel,
-} = require("../controllers/adminController");
+// Manage Users
+router.get(
+  "/manage-users",
+  verifyToken(["super_admin"]),
+  adminController.manageUsers
+);
 
-//middleware
-router.use(ipCheck);
-router.use(adminAuth);
+// Parcel APIs
+router.post(
+  "/registerParcel",
+  verifyToken(["admin", "super_admin"]),
+  adminController.registerParcel
+);
+router.get(
+  "/getParcels",
+  verifyToken(["admin", "super_admin"]),
+  adminController.getParcels
+);
+router.post(
+  "/calculateEms",
+  verifyToken(["admin", "super_admin"]),
+  adminController.calculateEms
+);
+router.get(
+  "/equipment",
+  verifyToken(["admin", "super_admin"]),
+  adminController.equipment
+);
+router.post(
+  "/selectPayment",
+  verifyToken(["admin", "super_admin"]),
+  adminController.selectPayment
+);
+router.put(
+  "/updatePayment",
+  verifyToken(["admin", "super_admin"]),
+  adminController.updatePayment
+);
+router.put(
+  "/updatePaymentForQrCode",
+  verifyToken(["admin", "super_admin"]),
+  adminController.updatePaymentForQrCode
+);
+router.put(
+  "/editParcel/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.editParcel
+);
+router.delete(
+  "/deleteParcel/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.deleteParcel
+);
+router.get(
+  "/getEquipment",
+  verifyToken(["admin", "super_admin"]),
+  adminController.getEquipment
+);
+router.post(
+  "/createEquipment",
+  verifyToken(["admin", "super_admin"]),
+  adminController.createEquipment
+);
+router.put(
+  "/updateEquipment/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.updateEquipment
+);
+router.delete(
+  "/deleteEquipment/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.deleteEquipment
+);
 
-//API
-router.post("/registerParcel", registerParcel);
-router.get("/getParcels", getParcels);
-router.post("/calculateEms", calculateEms);
-router.get("/equipment", equipment);
-router.post("/selectPayment", selectPayment);
-router.put("/updatePayment", updatePayment);
-router.put("/updatePaymentForQrCode", updatePaymentForQrCode);
-router.put("/editParcel/:id", editParcel);
-router.delete("/deleteParcel/:id", deleteParcel);
+router.post(
+  "/createAdmin",
+  verifyToken(["super_admin"]),
+  adminController.createAdmin
+);
+
+router.get(
+  "/getAdmins",
+  verifyToken(["super_admin"]),
+  adminController.getAdmins
+);
+
+router.delete(
+  "/deleteAdmin/:id",
+  verifyToken(["super_admin"]),
+  adminController.deleteAdmin
+);
+
+router.put(
+  "/updateAdmin",
+  verifyToken(["super_admin"]),
+  adminController.updateAdmin
+);
 
 module.exports = router;

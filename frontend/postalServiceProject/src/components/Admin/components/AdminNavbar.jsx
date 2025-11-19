@@ -1,10 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Navbar, Nav, Container } from "react-bootstrap";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const AdminNavbar = () => {
   const [hovered, setHovered] = useState(null);
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    // ดึง role จาก localStorage (ควรเก็บตอน login)
+    const storedRole = localStorage.getItem("role");
+    if (storedRole) setRole(storedRole);
+  }, []);
 
   const navItems = [
     { to: "/admin", label: "หน้าหลัก", icon: "bi-house" },
@@ -23,8 +30,30 @@ const AdminNavbar = () => {
       label: "คำนวณค่าจัดส่งพัสดุ",
       icon: "bi-calculator",
     },
-    { to: "/admin/Receipt", label: "พิมพ์ใบเสร็จ", icon: "bi-receipt" }
+    { to: "/admin/Receipt", label: "พิมพ์ใบเสร็จ", icon: "bi-receipt" },
+    ...(role === "super_admin"
+      ? [
+          { to: "/admin/ManageAll", label: "จัดการ", icon: "bi-pencil-square" },
+          {
+            to: "/admin/EditUser",
+            label: "จัดการผู้ใช้",
+            icon: "bi-person-gear",
+          },
+        ]
+      : []),
+    {
+      to: "/logout",
+      label: "Logout",
+      icon: "bi-box-arrow-right",
+      logout: true,
+    },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "/SelectRole";
+  };
 
   return (
     <>
@@ -38,9 +67,10 @@ const AdminNavbar = () => {
         <Container className="justify-content-around">
           {navItems.map((item, index) => (
             <Nav.Link
-              as={Link}
               key={item.to}
-              to={item.to}
+              as={item.logout ? "div" : Link}
+              to={item.logout ? undefined : item.to}
+              onClick={item.logout ? handleLogout : undefined}
               onMouseEnter={() => setHovered(index)}
               onMouseLeave={() => setHovered(null)}
               style={{

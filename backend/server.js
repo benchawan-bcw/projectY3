@@ -7,12 +7,16 @@ connectDB();
 
 const adminRouter = require("./routes/admin.routes.js");
 const customerRouter = require("./routes/customer.routes.js");
+const authRouter = require("./routes/auth.routes.js");
 
 const app = express();
 const port = 4000;
 
 app.use(cors());
 app.use(express.json());
+
+//login
+app.use("/auth-ban-poolsub", authRouter);
 
 //admin
 app.use("/admin-ban-poolsub", adminRouter);

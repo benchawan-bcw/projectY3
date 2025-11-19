@@ -8,8 +8,12 @@ const thaiPostToken = require("../config/memberToken");
 const qrcode = require("qrcode");
 const generatePayload = require("promptpay-qr");
 const { Types } = require("mongoose");
+const User = require("../models/user");
+const bcrypt = require("bcryptjs");
 
 const dotenv = require("dotenv");
+const EquipmentSchema = require("../models/equipment");
+const Equipment = mongoose.model("Equipment", EquipmentSchema);
 dotenv.config();
 
 // โหลดไฟล์ JSON
@@ -25,11 +29,11 @@ exports.registerParcel = async (req, res) => {
   try {
     const {
       tracking_number,
-      sender,
+      sender_name,
       sender_phone,
-      receiver,
+      receiver_name,
       receiver_phone,
-      address,
+      receiver_address,
       weight,
       equipment,
       service_type,
@@ -39,19 +43,18 @@ exports.registerParcel = async (req, res) => {
       total_price = 0,
     } = req.body;
 
+    // ตรวจสอบข้อมูลจำเป็น
     if (
       !tracking_number ||
-      !sender ||
-      !sender_phone ||
-      !receiver ||
+      !receiver_name ||
       !receiver_phone ||
-      !address ||
-      !weight ||
-      !equipment
+      !receiver_address ||
+      !weight
     ) {
       return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบทุกช่อง" });
     }
 
+    // เช็ค Tracking Number ซ้ำ
     const exists = await Parcels.findOne({ tracking_number });
     if (exists) {
       return res
@@ -59,7 +62,7 @@ exports.registerParcel = async (req, res) => {
         .json({ message: "Tracking number already exists" });
     }
 
-    // ดึง token
+    // ดึง token จาก Thailand Post
     let token;
     try {
       token = await thaiPostToken.getThaiPostToken();
@@ -70,8 +73,7 @@ exports.registerParcel = async (req, res) => {
     }
 
     // ดึงข้อมูล tracking
-    let trackingInfo;
-
+    let trackingInfo = {};
     try {
       const response = await fetch(
         "https://trackapi.thailandpost.co.th/post/api/v1/track",
@@ -88,57 +90,58 @@ exports.registerParcel = async (req, res) => {
           }),
         }
       );
-
       const text = await response.text();
-
       try {
         trackingInfo = JSON.parse(text);
       } catch {
-        console.warn(
-          "ThaiPost returned non-JSON response, set status เป็น 'รออัปเดต'"
-        );
         trackingInfo = {};
       }
-    } catch (err) {
+    } catch {
       trackingInfo = {};
     }
 
-    console.log("Mongo connected:", mongoose.connection.readyState);
+    // คำนวณค่าจัดส่ง
+    const shipping_cost = calculateEmsCost(weight, isIsland, packagingCost);
 
-    const shippingCost = calculateEmsCost(weight, isIsland, packagingCost);
     const total_equipment = Array.isArray(equipment)
-      ? equipment.reduce((sum, item) => sum + (item.price || 0), 0)
+      ? equipment.reduce(
+          (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
+          0
+        )
       : 0;
+
     const net_price = total_price;
 
-    let parcelStatus =
+    let parcel_status =
       trackingInfo?.status ||
       (Array.isArray(trackingInfo?.items) && trackingInfo.items[0]?.status) ||
       "รออัปเดต";
 
-    // แก้ typo ที่เป็นไปได้
-    if (parcelStatus === "รออัปปเดต") parcelStatus = "รออัปเดต";
+    if (parcel_status === "รออัปปเดต") parcel_status = "รออัปเดต";
 
+    // สร้างพัสดุ
     const parcel = await Parcels.create({
       tracking_number,
-      sender,
-      sender_phone,
-      receiver,
-      receiver_phone,
-      address,
+      sender: { name: sender_name, phone: sender_phone },
+      receiver: {
+        name: receiver_name,
+        phone: receiver_phone,
+        address: receiver_address,
+      },
       weight,
       equipment,
       service_type: service_type || "EMS",
-      parcel_status: parcelStatus,
-      shipping_cost: shippingCost,
+      parcel_status,
+      shipping_cost,
       total_equipment,
       total_price,
       net_price,
-      update_at: new Date(),
+      updated_at: new Date(),
     });
 
     res.status(201).json({ message: "ลงทะเบียนพัสดุสำเร็จ", parcel });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -448,3 +451,156 @@ function getDayRangeBangkok(dateStr) {
   const end = new Date(`${d}T23:59:59.999${tz}`);
   return { start, end };
 }
+
+// ดึงข้อมูลอุปกร
+exports.getEquipment = async (req, res) => {
+  try {
+    const equipments = await Equipment.find();
+    res.json(equipments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// เพิ่มอุปกรใหม่
+exports.createEquipment = async (req, res) => {
+  try {
+    const { name, price, quantity } = req.body;
+
+    if (!name || !price) {
+      return res.status(400).json({ message: "ต้องระบุชื่อและราคา" });
+    }
+
+    const newEquipment = new Equipment({
+      name,
+      price,
+      quantity: quantity || 1,
+    });
+
+    const saved = await newEquipment.save();
+    res.status(201).json(saved);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// แก้ไขอุปกรณ์
+exports.updateEquipment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price, quantity } = req.body;
+
+    const updated = await Equipment.findByIdAndUpdate(
+      id,
+      { name, price, quantity },
+      { new: true } // คืนค่าเอกสารที่อัปเดตแล้ว
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "ไม่พบอุปกรณ์นี้" });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ลบอุปกร
+exports.deleteEquipment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await Equipment.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "ไม่พบอุปกรณ์นี้" });
+    }
+
+    res.json({ message: "ลบอุปกรณ์เรียบร้อยแล้ว" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.dashboard = (req, res) => {
+  res.json({ message: "Admin Dashboard" });
+};
+
+exports.manageUsers = (req, res) => {
+  res.json({ message: "Manage Users" });
+};
+
+// เพิ่ม admin
+exports.createAdmin = async (req, res) => {
+  try {
+    const { username, password, role } = req.body;
+
+    if (!username || !password || !role) {
+      return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบ" });
+    }
+    if (!["admin", "super_admin"].includes(role)) {
+      return res
+        .status(400)
+        .json({ message: "role ต้องเป็น admin หรือ super_admin" });
+    }
+
+    const existing = await User.findOne({ username });
+    if (existing)
+      return res.status(400).json({ message: "ชื่อผู้ใช้นี้มีอยู่แล้ว" });
+
+    const newUser = new User({ username, password, role });
+    await newUser.save();
+
+    res.json({ message: "สร้างผู้ใช้งานเรียบร้อย", user: { username, role } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// แก้ไข admin
+exports.updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, password, role } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้งาน" });
+
+    if (username) user.username = username;
+    if (role && ["admin", "super_admin"].includes(role)) user.role = role;
+    if (password) user.password = await bcrypt.hash(password, 10);
+
+    await user.save();
+
+    res.json({
+      message: "อัปเดตผู้ใช้งานเรียบร้อย",
+      user: { username: user.username, role: user.role },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ดึงรายชื่อ admin
+exports.getAdmins = async (req, res) => {
+  try {
+    const users = await User.find({
+      role: { $in: ["admin", "super_admin"] },
+    }).select("-password");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ลบ admin
+exports.deleteAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndDelete(id);
+    if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้งาน" });
+    res.json({ message: "ลบผู้ใช้งานเรียบร้อย" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

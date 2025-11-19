@@ -22,6 +22,7 @@ const ParcelReport = () => {
   const [selectedDate, setSelectedDate] = useState(null); // เพิ่มตรงนี้
   const [periodType, setPeriodType] = useState("daily"); // "daily", "weekly", "monthly"
   const [report, setReport] = useState([]);
+  const token = localStorage.getItem("token");
 
   // ดึงข้อมูลพัสดุทั้งหมด
 
@@ -31,7 +32,9 @@ const ParcelReport = () => {
         const res = await axios.get(
           "http://localhost:4000/admin-ban-poolsub/getParcels",
           {
-            auth: { username: "admin", password: "bands" },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
 

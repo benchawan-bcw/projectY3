@@ -15,12 +15,18 @@ const Payment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
     const fetchParcels = async () => {
       try {
         const res = await axios.get(
           "http://localhost:4000/admin-ban-poolsub/getParcels",
-          { auth: { username: "admin", password: "bands" } }
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
         if (res.data && res.data.length > 0) {

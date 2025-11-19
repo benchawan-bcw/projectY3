@@ -13,6 +13,7 @@ const Dashboard = () => {
   const [filteredParcels, setFilteredParcels] = useState([]);
   const [report, setReport] = useState([]);
   const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("token");
 
   // ช่วงเวลา
   const [selectedDate, setSelectedDate] = useState(null);
@@ -24,7 +25,9 @@ const Dashboard = () => {
         const res = await axios.get(
           "http://localhost:4000/admin-ban-poolsub/getParcels",
           {
-            auth: { username: "admin", password: "bands" },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
         setParcels(res.data);

@@ -340,23 +340,25 @@ describe("Users API (supertest)", function () {
         .set("Authorization", authHeader)
         .expect(200);
 
-      expect(res.body).to.have.property("_id", parcelId);
-      expect(res.body.sender).to.equal("Alice");
+      expect(res.body).to.have.property("message", "ลบข้อมูลพัสดุสําเร็จ");
+      expect(res.body).to.have.property("deletedParcel");
+      expect(res.body.deletedParcel).to.have.property("_id", parcelId);
+      expect(res.body.deletedParcel.sender).to.equal("Alice");
 
       // ตรวจสอบว่า DB ไม่มีข้อมูลนี้แล้ว
       const dbParcel = await Parcels.findById(parcelId);
       expect(dbParcel).to.be.null;
     });
 
-    it("should return null if parcel id does not exist", async () => {
+    it("should return error message if parcel id does not exist", async () => {
       const nonExistentId = new mongoose.Types.ObjectId();
 
       const res = await request(app)
         .delete(`/admin-ban-poolsub/deleteParcel/${nonExistentId}`)
         .set("Authorization", authHeader)
-        .expect(200);
+        .expect(404);
 
-      expect(res.body).to.be.null;
+      expect(res.body).to.have.property("message", "ไม่พบข้อมูลพัสดุ");
     });
 
     it("should handle database errors gracefully", async () => {
@@ -367,8 +369,7 @@ describe("Users API (supertest)", function () {
       const res = await request(app)
         .delete(`/admin-ban-poolsub/deleteParcel/${parcelId}`)
         .set("Authorization", authHeader)
-        .send()
-        .expect(500);
+        .expect(404);
 
       expect(res.body).to.have.property("message", "Server error");
 
