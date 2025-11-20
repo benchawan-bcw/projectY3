@@ -13,12 +13,12 @@ const Dashboard = () => {
   const [filteredParcels, setFilteredParcels] = useState([]);
   const [report, setReport] = useState([]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem("token");
-
-  // ช่วงเวลา
   const [selectedDate, setSelectedDate] = useState(null);
   const [periodType, setPeriodType] = useState("daily");
 
+  const token = localStorage.getItem("token");
+
+  // ดึงข้อมูลพัสดุ
   useEffect(() => {
     const fetchParcels = async () => {
       try {
@@ -39,7 +39,7 @@ const Dashboard = () => {
       }
     };
     fetchParcels();
-  }, []);
+  }, [token]);
 
   // กรองพัสดุตามช่วงเวลา
   const filterByDate = () => {
@@ -63,7 +63,10 @@ const Dashboard = () => {
 
   // ประมวลผลรายงานสรุปตามช่วงเวลา
   useEffect(() => {
-    if (!selectedDate || parcels.length === 0) return setReport([]);
+    if (!selectedDate || parcels.length === 0) {
+      setReport([]); // เรียก state update เฉย ๆ
+      return; // แค่ return ออกจาก effect
+    }
 
     const filtered = parcels.filter((p) => {
       if (!p.update_at) return false;
@@ -91,8 +94,48 @@ const Dashboard = () => {
     setReport(Object.values(grouped));
   }, [parcels, selectedDate, periodType]);
 
-  if (loading) return <p>Loading...</p>;
+  
 
+  //Auto Refresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      axios
+        .get("http://localhost:4000/admin-ban-poolsub/getParcels", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          setParcels(res.data);
+          setFilteredParcels(res.data.slice(0, 10));
+        })
+        .catch((err) => console.error("Auto reload error:", err));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [token]);
+
+  //เคลียร์ข้อมูลหน้าแดชบอร์ดทุกๆเที่ยงคืนของวัน
+  useEffect(() => {
+    const resetAtMidnight = () => {
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0);
+      const msToMidnight = midnight.getTime() - now.getTime();
+
+      const timeoutId = setTimeout(() => {
+        setSelectedDate(null);
+        setFilteredParcels((prev) => prev.slice(0, 10));
+        resetAtMidnight();
+      }, msToMidnight);
+
+      return timeoutId;
+    };
+
+    const timeoutId = resetAtMidnight();
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+  
   return (
     <div className="space-y-6 px-6 py-4 font-sans max-w-[1400px] mx-auto">
       {/* Header */}
@@ -166,7 +209,7 @@ const Dashboard = () => {
           // reload data หลังอัปเดต
           axios
             .get("http://localhost:4000/admin-ban-poolsub/getParcels", {
-              auth: { username: "admin", password: "bands" },
+              headers: { Authorization: `Bearer ${token}` },
             })
             .then((res) => setFilteredParcels(res.data.slice(0, 10)));
         }}

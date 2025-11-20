@@ -7,21 +7,81 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingParcel, setEditingParcel] = useState(null);
 
-  const handleEdit = (parcel) => {
-    setEditingParcel(parcel);
-    setShowModal(true);
+  const token = localStorage.getItem("token");
+
+  const handleEdit = async (parcel) => {
+    try {
+      // เรียก API ล็อคพัสดุ
+      const res = await axios.put(
+        `http://localhost:4000/admin-ban-poolsub/lockParcel/${parcel._id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.status === 200) {
+        setEditingParcel(parcel);
+        setShowModal(true);
+      }
+    } catch (err) {
+      if (err.response && err.response.status === 403) {
+        alert(err.response.data.message);
+      } else {
+        console.error("Error locking parcel:", err);
+      }
+    }
   };
 
-  const handleClose = () => {
-    setShowModal(false);
+  const handleClose = async () => {
+    if (editingParcel) {
+      try {
+        const res = await axios.put(
+          `http://localhost:4000/admin-ban-poolsub/unlockParcel/${editingParcel._id}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        alert(res.data.message); // แจ้งผู้ใช้
+      } catch (err) {
+        if (err.response && err.response.status === 403) {
+          alert(err.response.data.message);
+        } else {
+          console.error("Error unlocking parcel:", err);
+          alert("เกิดข้อผิดพลาดในการปลดล็อคพัสดุ");
+        }
+      }
+    }
+
     setEditingParcel(null);
+    setShowModal(false);
   };
 
   const handleChange = (e) => {
-    setEditingParcel({
-      ...editingParcel,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    if (name === "senderName") {
+      setEditingParcel({
+        ...editingParcel,
+        sender: { ...editingParcel.sender, name: value },
+      });
+    } else if (name === "receiverName") {
+      setEditingParcel({
+        ...editingParcel,
+        receiver: { ...editingParcel.receiver, name: value },
+      });
+    } else if (name === "receiverAddress") {
+      setEditingParcel({
+        ...editingParcel,
+        receiver: { ...editingParcel.receiver, address: value },
+      });
+    } else {
+      // สำหรับ field อื่น ๆ เช่น weight, tracking_number
+      setEditingParcel({
+        ...editingParcel,
+        [name]: value,
+      });
+    }
   };
 
   const handleScan = (e) => {
@@ -46,7 +106,9 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
       await axios.put(
         `http://localhost:4000/admin-ban-poolsub/editParcel/${editingParcel._id}`,
         editingParcel,
-        { auth: { username: "admin", password: "bands" } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       alert("อัปเดตข้อมูลสำเร็จ!");
       onUpdateSuccess(); // reload list from parent
@@ -63,7 +125,9 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
     try {
       await axios.delete(
         `http://localhost:4000/admin-ban-poolsub/deleteParcel/${id}`,
-        { auth: { username: "admin", password: "bands" } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       alert("ลบข้อมูลสำเร็จ!");
       onUpdateSuccess(); // reload รายการจาก parent component
@@ -96,6 +160,9 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
               <th style={{ width: "8rem", padding: "10px" }}>น้ำหนัก</th>
               <th style={{ width: "5rem", padding: "10px" }}>บริการ</th>
               <th style={{ width: "10rem", padding: "10px" }}>สถานะ</th>
+              <th style={{ width: "14rem", padding: "10px" }}>
+                ลงทะเบียนเมื่อ
+              </th>
               <th style={{ width: "14rem", padding: "10px" }}>แก้ไขเมื่อ</th>
               <th style={{ width: "8rem", padding: "10px" }}>จัดการ</th>
             </tr>
@@ -114,10 +181,14 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                   <td className="px-4 py-3 text-gray-800">
                     {parcel.tracking_number}
                   </td>
-                  <td className="px-4 py-3 text-gray-800">{parcel.sender}</td>
-                  <td className="px-4 py-3 text-gray-800">{parcel.receiver}</td>
+                  <td className="px-4 py-3 text-gray-800">
+                    {parcel.sender?.name}
+                  </td>
+                  <td className="px-4 py-3 text-gray-800">
+                    {parcel.receiver?.name}
+                  </td>
                   <td className="px-4 py-3 text-gray-800 truncate max-w-xs">
-                    {parcel.address}
+                    {parcel.receiver?.address}
                   </td>
                   <td className="px-4 py-3 text-gray-800">{parcel.weight} g</td>
                   <td className="px-4 py-3 text-gray-800">
@@ -127,7 +198,26 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                     {parcel.parcel_status}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {new Date(parcel.update_at).toLocaleString("th-TH")}
+                    {parcel.createdAt
+                      ? new Date(parcel.createdAt).toLocaleString("th-TH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {parcel.updatedAt
+                      ? new Date(parcel.updatedAt).toLocaleString("th-TH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
                   </td>
                   <td
                     style={{
@@ -239,8 +329,9 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                   </label>
                   <input
                     type="text"
+                    readOnly
                     name="sender"
-                    value={editingParcel?.sender || ""}
+                    value={editingParcel?.sender?.name || ""}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
                     style={{
@@ -257,7 +348,7 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                   <input
                     type="text"
                     name="receiver"
-                    value={editingParcel?.receiver || ""}
+                    value={editingParcel?.receiver?.name || ""}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
                     style={{
@@ -274,7 +365,7 @@ const ParcelTable = ({ parcels = [], onUpdateSuccess }) => {
                   <input
                     type="text"
                     name="address"
-                    value={editingParcel?.address || ""}
+                    value={editingParcel?.receiver?.address || ""}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#E14434] focus:outline-none"
                     style={{

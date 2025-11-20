@@ -11,10 +11,12 @@ const RegisterParcel = () => {
   };
 
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [sender, setSender] = useState("");
-  const [senderPhone, setSenderPhone] = useState("");
-  const [receiver, setReceiver] = useState("");
-  const [receiverPhone, setReceiverPhone] = useState("");
+  const [sender, setSender] = useState({ name: "", phone: "" });
+  const [receiver, setReceiver] = useState({
+    name: "",
+    phone: "",
+    address: "",
+  });
   const [addressData, setAddressData] = useState({});
   const [barcode, setBarcode] = useState("");
 
@@ -217,14 +219,9 @@ const RegisterParcel = () => {
     setLoading(true);
     setMessage("");
 
-    if (
-      !trackingNumber ||
-      !sender ||
-      !receiver ||
-      weight <= 0 ||
-      !addressData.district
-    ) {
+    if (!trackingNumber || !receiver || !addressData.district || weight <= 0) {
       alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+      setLoading(false);
       return;
     }
 
@@ -246,6 +243,8 @@ const RegisterParcel = () => {
         .filter((item) => item) // ลบค่าว่าง
         .join(" "); // ต่อด้วย space แทน \n
 
+      const updatedReceiver = { ...receiver, address: fullAddress };
+
       // คำนวณราคารวมอุปกรณ์
       const totalEquipmentPrice = equipment.reduce(
         (sum, item) => sum + (item.price || 0),
@@ -261,11 +260,11 @@ const RegisterParcel = () => {
 
       console.log("📦 ข้อมูลที่จะส่ง:", {
         tracking_number: trackingNumber,
-        sender,
-        sender_phone: senderPhone,
-        receiver,
-        receiver_phone: receiverPhone,
-        address: fullAddress,
+        sender: {
+          name: sender.name,
+          phone: sender.phone,
+        },
+        receiver: updatedReceiver,
         weight,
         equipment: selectedEquipment,
         total_equipment: totalEquipment,
@@ -275,28 +274,27 @@ const RegisterParcel = () => {
         net_price: netPrice,
       });
 
+      const payload = {
+        tracking_number: trackingNumber,
+        sender,
+        receiver: updatedReceiver,
+        weight,
+        service_type: serviceType,
+        equipment: selectedEquipment,
+        total_equipment: totalEquipment,
+        shipping_cost: shippingCostNumber,
+        total_price: totalPriceNumber,
+        net_price: totalPriceNumber,
+      };
+
       const res = await axios.post(
         "http://localhost:4000/admin-ban-poolsub/registerParcel",
+        payload,
         {
-          tracking_number: trackingNumber,
-          sender,
-          sender_phone: senderPhone,
-          receiver,
-          receiver_phone: receiverPhone,
-          address: fullAddress,
-          weight,
-          equipment: selectedEquipment,
-          total_equipment: totalEquipment,
-          service_type: serviceType,
-          shipping_cost: shippingCost,
-          total_price: totalPrice,
-          net_price: netPrice,
-        },
-        {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       setMessage(res.data.message || "ลงทะเบียนพัสดุสำเร็จ");
@@ -304,10 +302,8 @@ const RegisterParcel = () => {
 
       // reset form
       setTrackingNumber("");
-      setSender("");
-      setSenderPhone("");
-      setReceiver("");
-      setReceiverPhone("");
+      setSender({ name: "", phone: "" });
+      setReceiver({ name: "", phone: "", address: "" });
       setWeight(0);
       setSelectedEquipment([]);
       setTotalEquipment(0);
@@ -415,8 +411,8 @@ const RegisterParcel = () => {
             </label>
             <input
               type="text"
-              value={sender}
-              onChange={(e) => setSender(e.target.value)}
+              value={sender.name}
+              onChange={(e) => setSender({ ...sender, name: e.target.value })}
               className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
@@ -425,8 +421,8 @@ const RegisterParcel = () => {
             <label className="font-medium mb-1">เบอร์โทรผู้ส่ง :</label>
             <input
               type="text"
-              value={senderPhone}
-              onChange={(e) => setSenderPhone(e.target.value)}
+              value={sender.phone}
+              onChange={(e) => setSender({ ...sender, phone: e.target.value })}
               className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
@@ -454,8 +450,10 @@ const RegisterParcel = () => {
             </label>
             <input
               type="text"
-              value={receiver}
-              onChange={(e) => setReceiver(e.target.value)}
+              value={receiver.name}
+              onChange={(e) =>
+                setReceiver({ ...receiver, name: e.target.value })
+              }
               className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
@@ -472,8 +470,10 @@ const RegisterParcel = () => {
             </label>
             <input
               type="text"
-              value={receiverPhone}
-              onChange={(e) => setReceiverPhone(e.target.value)}
+              value={receiver.phone}
+              onChange={(e) =>
+                setReceiver({ ...receiver, phone: e.target.value })
+              }
               className="w-full border border-gray-300 p-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
@@ -536,7 +536,7 @@ const RegisterParcel = () => {
                 }}
               >
                 {shippingCost?.isIsland && (
-                  <p className="m-0">พื้นที่เกาะ (+15 บาท)</p>
+                  <p className="m-0">พื้นที่พิเศษ (+15 บาท)</p>
                 )}
                 <p className="m-0">
                   ค่าส่ง EMS: {shippingCost?.total ?? 0} บาท

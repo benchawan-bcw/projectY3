@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middleware/authCheck");
 const adminController = require("../controllers/adminController"); // <-- import แบบ object เดียว
+const checkAutoUnlockParcel = require("../middleware/autoUnlock");
 
 // Dashboard
 router.get(
@@ -14,7 +15,7 @@ router.get(
 router.get(
   "/manage-users",
   verifyToken(["super_admin"]),
-  adminController.manageUsers
+  adminController.getAdmins
 );
 
 // Parcel APIs
@@ -63,6 +64,8 @@ router.delete(
   verifyToken(["admin", "super_admin"]),
   adminController.deleteParcel
 );
+
+// Equipment
 router.get(
   "/getEquipment",
   verifyToken(["admin", "super_admin"]),
@@ -84,28 +87,90 @@ router.delete(
   adminController.deleteEquipment
 );
 
+// Admin
 router.post(
   "/createAdmin",
   verifyToken(["super_admin"]),
   adminController.createAdmin
 );
 
+//admin edit
 router.get(
-  "/getAdmins",
+  "/manage-users",
   verifyToken(["super_admin"]),
   adminController.getAdmins
 );
-
+router.post(
+  "/manage-users",
+  verifyToken(["super_admin"]),
+  adminController.createAdmin
+);
+router.put(
+  "/manage-users/:id",
+  verifyToken(["super_admin"]),
+  adminController.updateAdmin
+);
 router.delete(
-  "/deleteAdmin/:id",
+  "/manage-users/:id",
   verifyToken(["super_admin"]),
   adminController.deleteAdmin
 );
 
+// EMSCost
+router.get(
+  "/getAllEMSCost",
+  verifyToken(["admin", "super_admin"]),
+  adminController.getAllEMSCost
+);
+router.post(
+  "/createEMSCost",
+  verifyToken(["admin", "super_admin"]),
+  adminController.createEMSCost
+);
 router.put(
-  "/updateAdmin",
-  verifyToken(["super_admin"]),
-  adminController.updateAdmin
+  "/updateEMSCost/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.updateEMSCost
+);
+router.delete(
+  "/deleteEMSCost/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.deleteEMSCost
 );
 
+// แก้ไขพัสดุของแอดมิน
+router.put(
+  "/lockParcel/:id",
+  verifyToken(["admin", "super_admin"]),
+  checkAutoUnlockParcel,
+  adminController.lockParcel
+);
+router.put(
+  "/unlockParcel/:id",
+  verifyToken(["admin", "super_admin"]),
+  checkAutoUnlockParcel,
+  adminController.unlockParcel
+);
+
+// postcode
+router.get(
+  "/getAllPostcodes",
+  verifyToken(["admin", "super_admin"]),
+  adminController.getAllPostcodes
+);
+router.post(
+  "/createPostcode",
+  verifyToken(["admin", "super_admin"]),
+  adminController.createPostcode
+);
+router.put(
+  "/updatePostcode/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.updatePostcode
+);
+router.delete(
+  "/deletePostcode/:id",
+  verifyToken(["admin", "super_admin"]),
+  adminController.deletePostcode
+);
 module.exports = router;

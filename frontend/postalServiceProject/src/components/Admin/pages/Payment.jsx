@@ -99,7 +99,9 @@ const Payment = () => {
           const res = await axios.post(
             "http://localhost:4000/admin-ban-poolsub/selectPayment",
             { paymentMethod: "qr", total_price: totalPriceNumber },
-            { auth: { username: "admin", password: "bands" } }
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
           );
           setResult({
             ...res.data,
@@ -145,7 +147,7 @@ const Payment = () => {
             paymentMethod === "cash" ? Number(customerPaid) : undefined,
         },
         {
-          auth: { username: "admin", password: "bands" },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       setResult(res.data);
@@ -221,7 +223,9 @@ const Payment = () => {
               ? Number(customerPaid)
               : parcelData.netPrice,
         },
-        { auth: { username: "admin", password: "bands" } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       const updatedParcels = parcelData.parcels.map((p) => ({
@@ -487,7 +491,9 @@ const Payment = () => {
           customer_paid: customerPaidValue,
           receipt_number: receiptNumber,
         },
-        { auth: { username: "admin", password: "bands" } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       if (!res.data || res.data.modifiedCount === 0) {
@@ -712,7 +718,7 @@ const Payment = () => {
             paymentMethod === "cash" ? Number(customerPaid) : totalPriceNumber,
         },
         {
-          auth: { username: "admin", password: "bands" },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 

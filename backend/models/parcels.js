@@ -3,7 +3,7 @@ const EquipmentSchema = require("./equipment");
 
 const ParcelsSchema = new mongoose.Schema({
   tracking_number: { type: String, required: true, unique: true },
-  
+
   sender: {
     name: { type: String, required: true },
     phone: { type: String, required: true },
@@ -22,8 +22,8 @@ const ParcelsSchema = new mongoose.Schema({
   total_equipment: { type: Number, default: 0 },
 
   shipping_cost: { type: Number, default: 0 },
-  total_price: { type: Number, default: 0 }, 
-  net_price: { type: Number, default: 0 }, 
+  total_price: { type: Number, default: 0 },
+  net_price: { type: Number, default: 0 },
 
   receipt_number: { type: String, default: null },
 
@@ -32,13 +32,22 @@ const ParcelsSchema = new mongoose.Schema({
   payment_method: { type: String, default: null },
   customer_paid: { type: Number, default: 0 },
 
-  created_at: { type: Date, default: Date.now },
-  updated_at: { type: Date, default: Date.now },
+  isLocked: { type: Boolean, default: false },
+  lockedBy: { type: String, default: null },
+  lockedAt: { type: Date, default: null },
+
+  createdAt: { type: Date, default: Date.now, immutable: true },
+  updatedAt: { type: Date, default: Date.now },
 });
 
-// Middleware อัปเดตวันที่แก้ไขล่าสุด
+// อัปเดต updatedAt ก่อน save
 ParcelsSchema.pre("save", function (next) {
-  this.updated_at = Date.now();
+  this.updatedAt = Date.now();
+  next();
+});
+// อัปเดต updatedAt เวลาทำ findOneAndUpdate
+ParcelsSchema.pre("findOneAndUpdate", function (next) {
+  this.set({ updatedAt: Date.now() });
   next();
 });
 

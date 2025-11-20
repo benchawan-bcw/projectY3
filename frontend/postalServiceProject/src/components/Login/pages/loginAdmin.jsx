@@ -25,24 +25,76 @@ const LoginAdmin = () => {
   };
 
   return (
-    <div style={{ padding: "30px" }}>
-      <h2>Login Admin</h2>
-      <form onSubmit={handleLogin}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        // backgroundColor: "#FEFBC7",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <form
+        onSubmit={handleLogin}
+        style={{
+          backgroundColor: "#fff",
+          padding: "40px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          width: "350px",
+          textAlign: "center",
+        }}
+      >
+        <h2 style={{ color: "#E14434", marginBottom: "30px" }}>Admin Login</h2>
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginBottom: "20px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "1rem",
+          }}
+          required
         />
-        <br />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginBottom: "25px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "1rem",
+          }}
+          required
         />
-        <br />
-        <button type="submit">เข้าสู่ระบบ</button>
+        <button
+          type="submit"
+          style={{
+            width: "100%",
+            padding: "12px",
+            backgroundColor: "#E14434",
+            color: "#FEFBC7",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "1rem",
+            cursor: "pointer",
+            transition: "all 0.3s ease",
+          }}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#c0352a")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#E14434")}
+        >
+          เข้าสู่ระบบ
+        </button>
       </form>
     </div>
   );

@@ -21,10 +21,10 @@ const Receipt = () => {
       const res = await axios.get(
         "http://localhost:4000/admin-ban-poolsub/getParcels",
         {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       let data = res.data;
@@ -32,7 +32,7 @@ const Receipt = () => {
 
       // กรองตามชื่อผู้ส่ง
       const filtered = data.filter((p) =>
-        p.sender.toLowerCase().includes(senderName.toLowerCase())
+        p.sender?.name?.toLowerCase().includes(senderName.toLowerCase())
       );
 
       if (filtered.length === 0) {
@@ -180,7 +180,7 @@ const Receipt = () => {
 
       printWindow.document.write(`
             <div class="receipt">
-            <p><b>ชื่อผู้รับ:</b> ${p.receiver || "-"}</p>
+            <p><b>ชื่อผู้รับ:</b> ${p.receiver.name || "-"}</p>
             <div style="display: flex; justify-content: space-between;">
               <span>${zipcode || "-"}</span>
               <span>${province || "-"}</span>
@@ -396,7 +396,7 @@ const Receipt = () => {
                   (e.currentTarget.style.backgroundColor = "#fff")
                 }
               >
-                <span>👤 {p.receiver}</span>
+                <span>{p.receiver.name}</span>
                 <span style={{ fontWeight: "500", color: "#2563eb" }}>
                   #{p.tracking_number}
                 </span>

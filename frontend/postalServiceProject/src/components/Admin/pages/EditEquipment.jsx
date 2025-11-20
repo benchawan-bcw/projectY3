@@ -108,11 +108,17 @@ const EditEquipment = () => {
       }}
     >
       <h3
-        style={{ textAlign: "center", color: "#E14434", marginBottom: "30px" }}
+        style={{
+          textAlign: "center",
+          marginBottom: "30px",
+          color: "#E14434",
+          fontWeight: "bold",
+        }}
       >
         จัดการอุปกรณ์
       </h3>
 
+      {/* เพิ่มอุปกรณ์ใหม่ */}
       <div
         style={{
           marginBottom: "40px",
@@ -141,8 +147,9 @@ const EditEquipment = () => {
               setNewEquipment({ ...newEquipment, name: e.target.value })
             }
             style={{
+              flex: 2,
+              minWidth: "0",
               padding: "8px",
-              flex: "1",
               borderRadius: "6px",
               border: "1px solid #ccc",
             }}
@@ -158,8 +165,9 @@ const EditEquipment = () => {
               })
             }
             style={{
+              flex: 1,
+              minWidth: "0",
               padding: "8px",
-              width: "100px",
               borderRadius: "6px",
               border: "1px solid #ccc",
             }}
@@ -175,8 +183,9 @@ const EditEquipment = () => {
               })
             }
             style={{
+              flex: 1,
+              minWidth: "0",
               padding: "8px",
-              width: "100px",
               borderRadius: "6px",
               border: "1px solid #ccc",
             }}
@@ -184,7 +193,9 @@ const EditEquipment = () => {
           <button
             onClick={handleCreate}
             style={{
-              padding: "8px 16px",
+              flex: 1,
+              minWidth: "0",
+              padding: "8px",
               backgroundColor: "#E14434",
               color: "#fff",
               border: "none",
@@ -195,61 +206,52 @@ const EditEquipment = () => {
             เพิ่มอุปกรณ์
           </button>
         </div>
-        {message && (
-          <p style={{ color: "green", marginTop: "10px" }}>{message}</p>
-        )}
       </div>
 
-      <h4 style={{ color: "#E14434", marginBottom: "20px" }}>รายการอุปกรณ์</h4>
-      {["กล่อง", "ซอง", "เชือก", "บับเบิ้ล"].map((category) => {
-        const list =
-          category === "กล่อง"
-            ? boxes
-            : category === "ซอง"
-            ? envelopes
-            : category === "เชือก"
-            ? ties
-            : bubbleWrap;
+      {/* ตารางรายการอุปกรณ์ */}
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "separate",
+          borderSpacing: "0 6px",
+          textAlign: "center",
+        }}
+      >
+        <thead>
+          <tr style={{ backgroundColor: "#E14434", color: "#fff" }}>
+            <th style={{ padding: "12px", borderRadius: "6px 6px 0 0" }}>
+              ชื่ออุปกรณ์
+            </th>
+            <th style={{ padding: "12px" }}>ราคา (฿)</th>
+            <th style={{ padding: "12px" }}>จำนวน</th>
+            <th style={{ padding: "12px", borderRadius: "6px 6px 0 0" }}>
+              จัดการ
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {["กล่อง", "ซอง", "เชือก", "บับเบิ้ล"].map((category) => {
+            const list =
+              category === "กล่อง"
+                ? boxes
+                : category === "ซอง"
+                ? envelopes
+                : category === "เชือก"
+                ? ties
+                : bubbleWrap;
 
-        return (
-          <div
-            key={category}
-            style={{
-              marginBottom: "25px",
-              backgroundColor: "#fdf5e6",
-              padding: "15px",
-              borderRadius: "10px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-            }}
-          >
-            <h5 style={{ color: "#E14434", marginBottom: "10px" }}>
-              {category}
-            </h5>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {list.map((item) => (
-                <li
+            return list.map((item) => {
+              const isEditing = editingEquipment?._id === item._id;
+              return (
+                <tr
                   key={item._id}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "8px 12px",
-                    marginBottom: "8px",
-                    borderRadius: "6px",
-                    backgroundColor:
-                      editingEquipment?._id === item._id ? "#fff1f0" : "#fff",
-                    border: "1px solid #E14434",
+                    backgroundColor: isEditing ? "#fff1f0" : "#fdf5e6",
+                    transition: "background 0.3s",
                   }}
                 >
-                  {editingEquipment?._id === item._id ? (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "10px",
-                        alignItems: "center",
-                        flex: 1,
-                      }}
-                    >
+                  <td style={{ padding: "10px" }}>
+                    {isEditing ? (
                       <input
                         type="text"
                         value={editingEquipment?.name || ""}
@@ -260,12 +262,18 @@ const EditEquipment = () => {
                           })
                         }
                         style={{
-                          flex: 1,
+                          width: "100%",
                           padding: "6px",
                           borderRadius: "6px",
                           border: "1px solid #ccc",
                         }}
                       />
+                    ) : (
+                      item.name
+                    )}
+                  </td>
+                  <td style={{ padding: "10px" }}>
+                    {isEditing ? (
                       <input
                         type="number"
                         value={editingEquipment?.price || ""}
@@ -282,9 +290,15 @@ const EditEquipment = () => {
                           border: "1px solid #ccc",
                         }}
                       />
+                    ) : (
+                      item.price
+                    )}
+                  </td>
+                  <td style={{ padding: "10px" }}>
+                    {isEditing ? (
                       <input
                         type="number"
-                        value={editingEquipment.quantity}
+                        value={editingEquipment?.quantity || ""}
                         onChange={(e) =>
                           setEditingEquipment({
                             ...editingEquipment,
@@ -298,43 +312,53 @@ const EditEquipment = () => {
                           border: "1px solid #ccc",
                         }}
                       />
-                      <button
-                        onClick={() => handleUpdate(editingEquipment._id)}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: "#4CAF50",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        บันทึก
-                      </button>
-                      <button
-                        onClick={() => setEditingEquipment(null)}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: "#ccc",
-                          color: "#333",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        ยกเลิก
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <span>
-                        {item.name} - {item.price}฿ - {item.quantity} ชิ้น
-                      </span>
-                      <div style={{ display: "flex", gap: "6px" }}>
+                    ) : (
+                      item.quantity
+                    )}
+                  </td>
+                  <td
+                    style={{
+                      padding: "10px",
+                      display: "flex",
+                      gap: "6px",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={() => handleUpdate(editingEquipment._id)}
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "#4CAF50",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          บันทึก
+                        </button>
+                        <button
+                          onClick={() => setEditingEquipment(null)}
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "#ccc",
+                            color: "#333",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ยกเลิก
+                        </button>
+                      </>
+                    ) : (
+                      <>
                         <button
                           onClick={() => setEditingEquipment({ ...item })}
                           style={{
-                            padding: "4px 10px",
+                            padding: "6px 12px",
                             backgroundColor: "#FFD700",
                             color: "#333",
                             border: "none",
@@ -347,7 +371,7 @@ const EditEquipment = () => {
                         <button
                           onClick={() => handleDelete(item._id)}
                           style={{
-                            padding: "4px 10px",
+                            padding: "6px 12px",
                             backgroundColor: "#E14434",
                             color: "#fff",
                             border: "none",
@@ -357,15 +381,15 @@ const EditEquipment = () => {
                         >
                           ลบ
                         </button>
-                      </div>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            });
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

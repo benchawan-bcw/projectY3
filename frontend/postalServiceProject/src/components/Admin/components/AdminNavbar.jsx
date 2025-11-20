@@ -33,7 +33,11 @@ const AdminNavbar = () => {
     { to: "/admin/Receipt", label: "พิมพ์ใบเสร็จ", icon: "bi-receipt" },
     ...(role === "super_admin"
       ? [
-          { to: "/admin/ManageAll", label: "จัดการ", icon: "bi-pencil-square" },
+          {
+            to: "/admin/ManageAll",
+            label: "จัดการระบบ",
+            icon: "bi-pencil-square",
+          },
           {
             to: "/admin/EditUser",
             label: "จัดการผู้ใช้",

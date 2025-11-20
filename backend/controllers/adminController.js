@@ -1,19 +1,21 @@
 // API ของแอดมิน
 const fs = require("fs");
 const path = require("path");
+const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
+const { Types } = require("mongoose");
 const Parcels = require("../models/parcels");
+const User = require("../models/user");
 const { getThaiPostToken } = require("../config/memberToken");
 const thaiPostToken = require("../config/memberToken");
 const qrcode = require("qrcode");
 const generatePayload = require("promptpay-qr");
-const { Types } = require("mongoose");
-const User = require("../models/user");
-const bcrypt = require("bcryptjs");
 
 const dotenv = require("dotenv");
 const EquipmentSchema = require("../models/equipment");
 const Equipment = mongoose.model("Equipment", EquipmentSchema);
+const EMSCost = require("../models/emsCost");
+const IslandsPostCode = require("../models/islandPostcode");
 dotenv.config();
 
 // โหลดไฟล์ JSON
@@ -29,11 +31,8 @@ exports.registerParcel = async (req, res) => {
   try {
     const {
       tracking_number,
-      sender_name,
-      sender_phone,
-      receiver_name,
-      receiver_phone,
-      receiver_address,
+      sender,
+      receiver,
       weight,
       equipment,
       service_type,
@@ -46,9 +45,11 @@ exports.registerParcel = async (req, res) => {
     // ตรวจสอบข้อมูลจำเป็น
     if (
       !tracking_number ||
-      !receiver_name ||
-      !receiver_phone ||
-      !receiver_address ||
+      !sender?.name ||
+      !sender?.phone ||
+      !receiver?.name ||
+      !receiver?.phone ||
+      !receiver?.address ||
       !weight
     ) {
       return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบทุกช่อง" });
@@ -122,12 +123,8 @@ exports.registerParcel = async (req, res) => {
     // สร้างพัสดุ
     const parcel = await Parcels.create({
       tracking_number,
-      sender: { name: sender_name, phone: sender_phone },
-      receiver: {
-        name: receiver_name,
-        phone: receiver_phone,
-        address: receiver_address,
-      },
+      sender,
+      receiver,
       weight,
       equipment,
       service_type: service_type || "EMS",
@@ -136,7 +133,7 @@ exports.registerParcel = async (req, res) => {
       total_equipment,
       total_price,
       net_price,
-      updated_at: new Date(),
+      updatedAt: new Date(),
     });
 
     res.status(201).json({ message: "ลงทะเบียนพัสดุสำเร็จ", parcel });
@@ -149,7 +146,7 @@ exports.registerParcel = async (req, res) => {
 // ดึงข้อมูลพัสดุทั้งหมด
 exports.getParcels = async (req, res) => {
   try {
-    const parcels = await Parcels.find().sort({ update_at: -1 });
+    const parcels = await Parcels.find().sort({ createdAt: -1 });
     res.json(parcels);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -160,18 +157,25 @@ exports.getParcels = async (req, res) => {
 exports.editParcel = async (req, res) => {
   try {
     const parcelId = req.params.id;
-    const updatedData = {
-      ...req.body,
-      update_at: new Date(),
-    };
-    const updatedParcel = await Parcels.findOneAndUpdate(
-      { _id: parcelId },
-      updatedData,
-      { new: true }
-    );
-    res.json(updatedParcel);
+    const updateData = req.body;
+
+    // ตรวจสอบว่ามีการล็อค
+    const parcel = await Parcels.findById(parcelId);
+    if (!parcel) return res.status(404).json({ message: "ไม่พบพัสดุ" });
+    if (parcel.isLocked && parcel.lockedBy !== req.user.username) {
+      return res.status(403).json({
+        message: `พัสดุถูกแก้ไขโดย: ${parcel.lockedBy}`,
+      });
+    }
+
+    // อัปเดตข้อมูลและ updated_at อัตโนมัติ (timestamps)
+    Object.assign(parcel, updateData);
+    await parcel.save();
+
+    res.json({ message: "แก้ไขข้อมูลสำเร็จ", parcel });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error(err);
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการแก้ไข" });
   }
 };
 
@@ -506,7 +510,7 @@ exports.updateEquipment = async (req, res) => {
   }
 };
 
-// ลบอุปกร
+// ลบอุปกรณ์
 exports.deleteEquipment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -586,8 +590,8 @@ exports.getAdmins = async (req, res) => {
   try {
     const users = await User.find({
       role: { $in: ["admin", "super_admin"] },
-    }).select("-password");
-    res.json(users);
+    }).select("-password"); // ไม่ส่ง password จริง
+    res.json({ users }); // ✅ ใส่ key users
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -600,6 +604,228 @@ exports.deleteAdmin = async (req, res) => {
     const user = await User.findByIdAndDelete(id);
     if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้งาน" });
     res.json({ message: "ลบผู้ใช้งานเรียบร้อย" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ค่าส่ง
+// GET ทั้งหมด
+exports.getAllEMSCost = async (req, res) => {
+  try {
+    const costs = await EMSCost.find().sort({ max: 1 });
+    res.status(200).json(costs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// POST เพิ่มค่าใหม่
+exports.createEMSCost = async (req, res) => {
+  try {
+    const { max, price } = req.body;
+
+    if (max == null || price == null) {
+      return res.status(400).json({ message: "ต้องระบุ max และ price" });
+    }
+
+    const newCost = new EMSCost({ max, price });
+    const saved = await newCost.save();
+
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// PUT อัปเดตตาม id
+exports.updateEMSCost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { max, price } = req.body;
+
+    const updated = await EMSCost.findByIdAndUpdate(
+      id,
+      { max, price },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "ไม่พบรายการ" });
+    }
+
+    res.status(200).json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// DELETE ลบตาม id
+exports.deleteEMSCost = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await EMSCost.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "ไม่พบรายการ" });
+    }
+
+    res.status(200).json({ message: "ลบสำเร็จ" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+//ล็อคการแก้ไขข้อมูล
+const AUTO_UNLOCK_TIME = 10 * 60 * 1000; // 10 นาที
+//lock
+exports.lockParcel = async (req, res) => {
+  try {
+    const admin = req.user.username;
+    const parcelId = req.params.id;
+
+    const parcel = await Parcels.findById(parcelId);
+    if (!parcel) return res.status(404).json({ message: "ไม่พบพัสดุ" });
+
+    // ตรวจสอบ auto-unlock
+    if (parcel.isLocked) {
+      const diff = Date.now() - new Date(parcel.lockedAt).getTime();
+      if (diff > AUTO_UNLOCK_TIME) {
+        parcel.isLocked = false;
+        parcel.lockedBy = null;
+        parcel.lockedAt = null;
+      } else if (parcel.lockedBy !== admin) {
+        return res.status(403).json({
+          message: `พัสดุถูกแก้ไขโดย: ${parcel.lockedBy}`,
+        });
+      }
+    }
+
+    parcel.isLocked = true;
+    parcel.lockedBy = admin;
+    parcel.lockedAt = new Date();
+    await parcel.save({ validateBeforeSave: false });
+
+    res.json({ message: "ล็อคสำเร็จ สามารถแก้ไขข้อมูลได้" });
+    console.log(
+      "Parcel lock status:",
+      parcel.isLocked,
+      parcel.lockedBy,
+      parcel.lockedAt
+    );
+    console.log("Current admin:", admin);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+};
+
+//unlock
+exports.unlockParcel = async (req, res) => {
+  try {
+    const admin = req.user.username;
+    const role = req.user.role;
+    const parcelId = req.params.id;
+
+    const parcel = await Parcels.findById(parcelId); // ✅ ใช้ Parcels
+    if (!parcel) return res.status(404).json({ message: "ไม่พบพัสดุ" });
+
+    // ถ้า lockedBy ไม่ใช่ admin ปัจจุบัน
+    if (parcel.lockedBy && parcel.lockedBy !== admin) {
+      if (role === "super_admin") {
+        parcel.isLocked = false;
+        parcel.lockedBy = null;
+        parcel.lockedAt = null;
+        await parcel.save();
+        return res.json({
+          message: "Super Admin ปลดล็อคพัสดุเรียบร้อย",
+        });
+      } else {
+        return res.status(403).json({
+          message: `คุณไม่มีสิทธิปลดล็อค (พัสดุถูกล็อคโดย: ${parcel.lockedBy})`,
+        });
+      }
+    }
+
+    // ปลดล็อคสำหรับ admin ปัจจุบันหรือพัสดุไม่ได้ล็อค
+    parcel.isLocked = false;
+    parcel.lockedBy = null;
+    parcel.lockedAt = null;
+    await parcel.save();
+
+    res.json({ message: "ปลดล็อคสำเร็จ" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+};
+
+// รหัสไปรษณีย์
+// GET ทั้งหมด
+exports.getAllPostcodes = async (req, res) => {
+  try {
+    const postcodes = await IslandsPostCode.find().sort({ postcode: 1 });
+    res.status(200).json(postcodes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// POST เพิ่มใหม่
+exports.createPostcode = async (req, res) => {
+  try {
+    const { postcode } = req.body;
+
+    if (!postcode)
+      return res.status(400).json({ message: "ต้องระบุ postcode" });
+
+    const newPostcode = new IslandsPostCode({ postcode });
+    const saved = await newPostcode.save();
+
+    res.status(201).json(saved);
+  } catch (err) {
+    // กรณี duplicate
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "postcode นี้มีอยู่แล้ว" });
+    }
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// PUT อัปเดตตาม id
+exports.updatePostcode = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { postcode } = req.body;
+
+    const updated = await IslandsPostCode.findByIdAndUpdate(
+      id,
+      { postcode },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ message: "ไม่พบรายการ" });
+
+    res.status(200).json(updated);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "postcode นี้มีอยู่แล้ว" });
+    }
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// DELETE ลบตาม id
+exports.deletePostcode = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await IslandsPostCode.findByIdAndDelete(id);
+
+    if (!deleted) return res.status(404).json({ message: "ไม่พบรายการ" });
+
+    res.status(200).json({ message: "ลบสำเร็จ" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

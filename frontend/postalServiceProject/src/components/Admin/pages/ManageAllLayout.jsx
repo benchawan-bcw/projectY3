@@ -6,28 +6,58 @@ const ManageAllLayout = () => {
   const navItems = [
     { to: "/admin/ManageAll/EditEquipment", label: "จัดการอุปกรณ์" },
     { to: "/admin/ManageAll/EditShipping", label: "จัดการค่าส่ง" },
-    { to: "/admin/ManageAll/EditZipcode", label: "จัดการรหัสไปรษณีย์" },
+    {
+      to: "/admin/ManageAll/EditZipcode",
+      label: "จัดการรหัสไปรษณีย์พื้นที่พิเศษ",
+    },
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      {/* Sidebar ย่อย */}
-      <div style={{ width: "220px", background: "#f5f5f5", padding: "20px" }}>
-        <h4>จัดการระบบ</h4>
+    <div
+      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    >
+      {/* หัวข้อ */}
+      <h2
+        style={{
+          textAlign: "center",
+          marginBottom: "30px",
+          color: "#E14434",
+          fontWeight: "bold",
+          fontSize: "2rem",
+          letterSpacing: "1px",
+          textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+          marginTop: "2rem",
+        }}
+      >
+        จัดการระบบ
+      </h2>
+
+      {/* Navbar ด้านบน */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          flexWrap: "wrap",
+          gap: "16px",
+          padding: "10px 0",
+          marginBottom: "20px",
+        }}
+      >
         {navItems.map((item) => (
           <NavLink
             key={item.to}
-            to={item.to} // relative path
+            to={item.to}
             end
             style={({ isActive }) => ({
-              display: "block",
-              padding: "10px 12px",
-              margin: "6px 0",
-              borderRadius: "6px",
-              color: isActive ? "#fff" : "#333",
-              background: isActive ? "#E14434" : "transparent",
+              padding: "10px 20px",
+              borderRadius: "12px",
               textDecoration: "none",
-              fontWeight: isActive ? "bold" : "normal",
+              color: isActive ? "#fff" : "#333",
+              background: isActive ? "#E14434" : "#f9f9f9",
+              fontWeight: isActive ? "bold" : "500",
+              transition: "0.3s",
+              border: isActive ? "none" : "1px solid #ccc",
+              boxShadow: isActive ? "0 4px 8px rgba(0,0,0,0.15)" : "none",
             })}
           >
             {item.label}
@@ -35,8 +65,8 @@ const ManageAllLayout = () => {
         ))}
       </div>
 
-      {/* เนื้อหาหลัก */}
-      <div style={{ flex: 1, padding: "20px" }}>
+      {/* เนื้อหา */}
+      <div>
         <Outlet />
       </div>
     </div>
